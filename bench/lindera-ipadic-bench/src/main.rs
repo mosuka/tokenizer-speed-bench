@@ -1,23 +1,14 @@
 use std::io::BufRead;
 
-use lindera::dictionary::DictionaryConfig;
+use lindera::dictionary::load_dictionary;
 use lindera::mode::Mode;
-use lindera::tokenizer::{Tokenizer, TokenizerConfig};
-use lindera::DictionaryKind;
+use lindera::segmenter::Segmenter;
 
 fn main() {
-    let dictionary = DictionaryConfig {
-        kind: Some(DictionaryKind::IPADIC),
-        path: None,
-    };
+    let dictionary = load_dictionary("embedded://ipadic").unwrap();
 
-    let config = TokenizerConfig {
-        dictionary,
-        user_dictionary: None,
-        mode: Mode::Normal,
-    };
+    let segmenter = Segmenter::new(Mode::Normal, dictionary, None);
 
-    let tokenizer = Tokenizer::from_config(config).unwrap();
     let lines: Vec<_> = std::io::stdin()
         .lock()
         .lines()
@@ -28,7 +19,7 @@ fn main() {
     let start = std::time::Instant::now();
 
     for line in &lines {
-        let tokens = tokenizer.tokenize(line).unwrap();
+        let tokens = segmenter.segment(line.into()).unwrap();
         n_words += tokens.len();
     }
 

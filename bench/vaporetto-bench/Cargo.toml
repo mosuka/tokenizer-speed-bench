@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-vaporetto = "=0.6.1"
+vaporetto = "=0.6.5"
 
 [build-dependencies]
-vaporetto = { version = "=0.6.1", features = ["kytea"] }
+vaporetto = { version = "=0.6.5", features = ["kytea"] }
 
 [profile.release.build-override]
 opt-level = 3

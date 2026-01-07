@@ -8,7 +8,7 @@ use vibrato::{Dictionary, Tokenizer};
 #[derive(Parser, Debug)]
 #[clap(name = "main", about = "A program to benchmark.")]
 struct Args {
-    #[clap(long, action)]
+    #[clap(long)]
     dictname: String,
 }
 
@@ -21,7 +21,7 @@ fn main() {
     let reader =
         zstd::Decoder::new(File::open(format!("{rootdir}/{dictname}/system.dic.zst")).unwrap())
             .unwrap();
-    let dict = unsafe { Dictionary::read_unchecked(reader).unwrap() };
+    let dict = Dictionary::read(reader).unwrap();
     let tokenizer = Tokenizer::new(dict);
     let mut worker = tokenizer.new_worker();
 
