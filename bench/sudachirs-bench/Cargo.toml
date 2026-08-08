@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-sudachi = { git = "https://github.com/WorksApplications/sudachi.rs.git", rev = "26a9f18" }
+sudachi = { git = "https://github.com/WorksApplications/sudachi.rs.git", rev = "90fd606" }

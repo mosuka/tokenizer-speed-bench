@@ -7,8 +7,8 @@ edition = "2021"
 
 [dependencies]
 vibrato = "0.5.2"
-clap = { version = "4.5.54", features = ["derive"] }  # MIT or Apache-2.0
-zstd = "0.13.3"  # MIT
+clap = { version = "4.6.6", features = ["derive"] } # MIT or Apache-2.0
+zstd = "0.13.3"                                     # MIT
 
 [profile.release.build-override]
 opt-level = 3
