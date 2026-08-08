@@ -51,10 +51,6 @@ if [ ! -d "unidic-cwj-3_1_1" ]; then
     wget https://github.com/daac-tools/vibrato/releases/download/v0.5.0/unidic-cwj-3_1_1.tar.xz
     tar -xf unidic-cwj-3_1_1.tar.xz
 fi
-if [ ! -d "unidic-cwj-3_1_1+compact" ]; then
-    wget https://github.com/daac-tools/vibrato/releases/download/v0.5.0/unidic-cwj-3_1_1+compact.tar.xz
-    tar -xf unidic-cwj-3_1_1+compact.tar.xz
-fi
 if [ ! -d "unidic-cwj-3_1_1+compact-dual" ]; then
     wget https://github.com/daac-tools/vibrato/releases/download/v0.5.0/unidic-cwj-3_1_1+compact-dual.tar.xz
     tar -xf unidic-cwj-3_1_1+compact-dual.tar.xz
