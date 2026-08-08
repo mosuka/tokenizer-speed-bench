@@ -30,6 +30,18 @@ if [ ! -d "./sudachi-dictionary-20210802" ]; then
 fi
 popd
 
+pushd "./bench/litsea-japanese-bench"
+if [ ! -f "./japanese.model" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.5.0/models/japanese.model" -O "./japanese.model"
+fi
+popd
+
+pushd "./bench/litsea-japanese-pos-bench"
+if [ ! -f "./japanese_pos.model" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.5.0/models/japanese_pos.model" -O "./japanese_pos.model"
+fi
+popd
+
 pushd "./bench/vibrato-bench"
 if [ ! -d "ipadic-mecab-2_7_0" ]; then
     wget https://github.com/daac-tools/vibrato/releases/download/v0.5.0/ipadic-mecab-2_7_0.tar.xz

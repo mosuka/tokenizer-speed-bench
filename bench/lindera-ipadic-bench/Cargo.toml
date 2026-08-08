@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-lindera = { version = "2.0.1", features = ["embed-ipadic"] }
+lindera = { version = "5.0.2", features = ["embed-ipadic"] }

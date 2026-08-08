@@ -19,6 +19,8 @@ RE_DICT = [
     ('sudachi', re.compile(r'Elapsed-sudachi: ([0-9\.]+) \[sec\]')),
     ('sudachi.rs', re.compile(r'Elapsed-sudachi.rs: ([0-9\.]+) \[sec\]')),
     ('rust-tinysegmenter', re.compile(r'Elapsed-rust-tinysegmenter: ([0-9\.]+) \[sec\]')),
+    ('litsea-japanese', re.compile(r'Elapsed-litsea-japanese: ([0-9\.]+) \[sec\]')),
+    ('litsea-japanese-pos', re.compile(r'Elapsed-litsea-japanese-pos: ([0-9\.]+) \[sec\]')),
     ('vibrato-ipadic-mecab-2_7_0', re.compile(r'Elapsed-vibrato-ipadic-mecab-2_7_0: ([0-9\.]+) \[sec\]')),
     ('vibrato-unidic-cwj-3_1_1', re.compile(r'Elapsed-vibrato-unidic-cwj-3_1_1: ([0-9\.]+) \[sec\]')),
     ('vibrato-unidic-cwj-3_1_1+compact', re.compile(r'Elapsed-vibrato-unidic-cwj-3_1_1\+compact: ([0-9\.]+) \[sec\]')),

@@ -72,6 +72,14 @@ pushd "./bench/rust-tinysegmenter-bench"
 cargo build --release
 popd
 
+pushd "./bench/litsea-japanese-bench"
+cargo build --release
+popd
+
+pushd "./bench/litsea-japanese-pos-bench"
+cargo build --release
+popd
+
 pushd "./bench/vibrato-bench"
 RUSTFLAGS='-C target-feature=+avx2' cargo build --release
 popd
