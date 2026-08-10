@@ -32,13 +32,13 @@ popd
 
 pushd "./bench/litsea-japanese-bench"
 if [ ! -f "./japanese.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.5.0/models/japanese.model" -O "./japanese.model"
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.8.0/models/japanese.model" -O "./japanese.model"
 fi
 popd
 
 pushd "./bench/litsea-japanese-pos-bench"
 if [ ! -f "./japanese_pos.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.5.0/models/japanese_pos.model" -O "./japanese_pos.model"
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.8.0/models/japanese_pos.model" -O "./japanese_pos.model"
 fi
 popd
 

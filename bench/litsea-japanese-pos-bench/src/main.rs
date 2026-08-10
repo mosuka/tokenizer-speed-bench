@@ -24,7 +24,7 @@ fn main() {
 
     let start = std::time::Instant::now();
     for line in &lines {
-        n_words += segmenter.segment_with_pos(line).len();
+        n_words += segmenter.segment_with_pos(line).unwrap().len();
     }
     let duration = start.elapsed();
 

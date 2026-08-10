@@ -13,7 +13,7 @@ fn main() {
             "/japanese.model"
         )))
         .unwrap();
-    let segmenter = Segmenter::new(Language::Japanese, Some(learner));
+    let segmenter = Segmenter::with_learner(Language::Japanese, learner);
 
     let lines: Vec<_> = std::io::stdin()
         .lock()
