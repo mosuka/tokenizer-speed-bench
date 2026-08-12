@@ -76,6 +76,10 @@ pushd "./bench/litsea-japanese-bench"
 cargo build --release
 popd
 
+pushd "./bench/litsea-japanese-rwcp-bench"
+cargo build --release
+popd
+
 pushd "./bench/litsea-japanese-pos-bench"
 cargo build --release
 popd
