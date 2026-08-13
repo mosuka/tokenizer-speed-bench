@@ -37,6 +37,8 @@ do
 
     ./bench/litsea-japanese-bench/target/release/litsea-japanese-bench < $INPUT_DATA
 
+    ./bench/litsea-japanese-rwcp-bench/target/release/litsea-japanese-rwcp-bench < $INPUT_DATA
+
     ./bench/litsea-japanese-pos-bench/target/release/litsea-japanese-pos-bench < $INPUT_DATA
 
     ./bench/vibrato-bench/target/release/vibrato-bench --dictname="ipadic-mecab-2_7_0" < $INPUT_DATA
