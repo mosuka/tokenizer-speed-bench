@@ -5,6 +5,8 @@ set -eux
 which mvn
 
 INPUT_DATA="./resources/wagahaiwa_nekodearu.txt"
+INPUT_DATA_KO="./resources/mujeong.txt"
+INPUT_DATA_ZH="./resources/rulin_waishi.txt"
 
 # iter=0 is a warm-up to avoid unfair results due to lazy loading.
 for i in $(seq 0 100)
@@ -40,6 +42,14 @@ do
     ./bench/litsea-japanese-rwcp-bench/target/release/litsea-japanese-rwcp-bench < $INPUT_DATA
 
     ./bench/litsea-japanese-pos-bench/target/release/litsea-japanese-pos-bench < $INPUT_DATA
+
+    ./bench/litsea-korean-bench/target/release/litsea-korean-bench < $INPUT_DATA_KO
+
+    ./bench/litsea-korean-pos-bench/target/release/litsea-korean-pos-bench < $INPUT_DATA_KO
+
+    ./bench/litsea-chinese-bench/target/release/litsea-chinese-bench < $INPUT_DATA_ZH
+
+    ./bench/litsea-chinese-pos-bench/target/release/litsea-chinese-pos-bench < $INPUT_DATA_ZH
 
     ./bench/vibrato-bench/target/release/vibrato-bench --dictname="ipadic-mecab-2_7_0" < $INPUT_DATA
 
