@@ -1,7 +1,0 @@
-[package]
-name = "litsea-japanese-rwcp-bench"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-litsea = { version = "0.10.0", default-features = false }
