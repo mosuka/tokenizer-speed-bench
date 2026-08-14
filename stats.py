@@ -24,7 +24,6 @@ RE_DICT = [
     ('sudachi.rs', re.compile(r'Elapsed-sudachi.rs: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('rust-tinysegmenter', re.compile(r'Elapsed-rust-tinysegmenter: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('litsea-japanese', re.compile(r'Elapsed-litsea-japanese: ([0-9\.]+) \[sec\]'), CORPUS_JA),
-    ('litsea-japanese-rwcp', re.compile(r'Elapsed-litsea-japanese-rwcp: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('litsea-japanese-pos', re.compile(r'Elapsed-litsea-japanese-pos: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('litsea-korean', re.compile(r'Elapsed-litsea-korean: ([0-9\.]+) \[sec\]'), CORPUS_KO),
     ('litsea-korean-pos', re.compile(r'Elapsed-litsea-korean-pos: ([0-9\.]+) \[sec\]'), CORPUS_KO),

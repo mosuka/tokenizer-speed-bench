@@ -36,12 +36,6 @@ if [ ! -f "./japanese.model" ]; then
 fi
 popd
 
-pushd "./bench/litsea-japanese-rwcp-bench"
-if [ ! -f "./RWCP.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.10.0/models/RWCP.model" -O "./RWCP.model"
-fi
-popd
-
 pushd "./bench/litsea-japanese-pos-bench"
 if [ ! -f "./japanese_pos.model" ]; then
     wget "https://raw.githubusercontent.com/mosuka/litsea/v0.10.0/models/japanese_pos.model" -O "./japanese_pos.model"

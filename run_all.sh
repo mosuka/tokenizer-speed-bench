@@ -39,8 +39,6 @@ do
 
     ./bench/litsea-japanese-bench/target/release/litsea-japanese-bench < $INPUT_DATA
 
-    ./bench/litsea-japanese-rwcp-bench/target/release/litsea-japanese-rwcp-bench < $INPUT_DATA
-
     ./bench/litsea-japanese-pos-bench/target/release/litsea-japanese-pos-bench < $INPUT_DATA
 
     ./bench/litsea-korean-bench/target/release/litsea-korean-bench < $INPUT_DATA_KO
