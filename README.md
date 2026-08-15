@@ -38,7 +38,8 @@ Measured 2026-08-15 on the following environment.
 
 Each tokenizer segmented its corpus 100 times (after 1 warm-up iteration,
 excluded from the statistics). Speed is in characters per second; higher is
-better. Std dev is the sample standard deviation across the 100 iterations.
+better. Std dev is the population standard deviation across the 100
+iterations.
 
 litsea 0.11.0 retrained its plain segmentation models (`japanese.model`,
 `korean.model`, `chinese.model`) for better accuracy, which also changes how
@@ -53,15 +54,17 @@ features, so its rows now also cover the `cc-cedict` (Chinese), `jieba`
 `unidic`.
 
 Model Size is the on-disk size of the dictionary/model file(s) each
-tokenizer actually reads at runtime, not its runtime memory usage: it
-excludes non-runtime data some distributions bundle alongside the
-dictionary (e.g. the raw CSV lexicon source, evaluation sets, and license
-files shipped in the UniDic archive besides the compiled `sys.dic`/
-`matrix.bin`/etc. MeCab itself opens; kuromoji's dictionary is measured from
-its extracted `.bin` files rather than its compressed `.jar`; vibrato's
-`system.dic.zst` is measured decompressed, matching what its `Predictor`
-actually holds in memory). Peak Memory is the maximum resident set size
-(RSS) of the whole benchmark process, measured with `/usr/bin/time -v`
+tokenizer actually opens at runtime (verified with `strace`), not its
+runtime memory usage: it excludes non-runtime data some distributions
+bundle alongside the dictionary (e.g. the raw CSV lexicon source,
+evaluation sets, license files, and the compile/training-only `model.bin`
+and `*.def` sources shipped in the MeCab dictionary directories besides the
+compiled `sys.dic`/`matrix.bin`/`char.bin`/`unk.dic` the tagger itself
+opens; kuromoji's dictionary is measured from its extracted `.bin` files
+rather than its compressed `.jar`; vibrato's `system.dic.zst` is measured
+decompressed, matching what it actually holds in memory). Peak Memory is
+the maximum resident set size (RSS) of the whole benchmark process,
+measured with `/usr/bin/time -v`
 around each iteration; it therefore includes dictionary loading, not just
 the segmentation loop that Speed measures. Every engine is measured this
 way, including the two Java ones, which `run_all.sh` launches directly with
@@ -77,13 +80,13 @@ footprint is not counted against them.
 | vibrato | 0.5.2 | ipadic-mecab-2.7.0 | 45.6 MB | 5,279,422 | 765,667 | 68.9 MB |
 | litsea (japanese, two-stage) | 0.11.0 | japanese_two_stage.model | 5.4 MB | 4,883,425 | 746,471 | 45.0 MB |
 | lindera | 5.2.0 | ipadic | 55.2 MB | 3,925,298 | 612,325 | 36.8 MB |
-| mecab | thirdparty submodule | ipadic 2.7.0 | 50.6 MB | 3,246,825 | 435,416 | 33.1 MB |
+| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 3,246,825 | 435,416 | 33.1 MB |
 | lindera | 5.2.0 | unidic | 204.0 MB | 2,895,138 | 395,889 | 139.0 MB |
 | vibrato | 0.5.2 | unidic-cwj-3.1.1 | 684.2 MB | 2,814,177 | 360,073 | 724.0 MB |
 | litsea (japanese, POS) | 0.11.0 | japanese_pos.model | 10.5 MB | 1,721,239 | 246,725 | 45.7 MB |
 | rust-tinysegmenter | 0.1.1 | - | - | 1,516,314 | 192,685 | 3.7 MB |
 | kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 1,440,471 | 201,393 | 736.7 MB |
-| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 770.9 MB | 1,327,531 | 159,184 | 355.9 MB |
+| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 1,327,531 | 159,184 | 355.9 MB |
 | sudachi.rs | git rev `90fd606` | sudachi-dictionary-20210802-core | 205.1 MB | 1,204,008 | 184,386 | 111.9 MB |
 | kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 1,033,107 | 166,657 | 353.9 MB |
 | vibrato | 0.5.2 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 882,617 | 123,781 | 326.2 MB |
