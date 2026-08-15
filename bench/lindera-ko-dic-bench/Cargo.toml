@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-lindera = { version = "5.2.0", features = ["embed-ko-dic"] }
+lindera = "5.2.0"

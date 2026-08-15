@@ -5,7 +5,8 @@ use lindera::mode::Mode;
 use lindera::segmenter::Segmenter;
 
 fn main() {
-    let dictionary = load_dictionary("embedded://ko-dic").unwrap();
+    let dictionary =
+        load_dictionary(concat!(env!("CARGO_MANIFEST_DIR"), "/lindera-ko-dic")).unwrap();
 
     let segmenter = Segmenter::new(Mode::Normal, dictionary, None);
 
