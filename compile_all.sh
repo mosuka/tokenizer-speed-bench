@@ -96,6 +96,18 @@ pushd "./bench/litsea-chinese-pos-bench"
 cargo build --release
 popd
 
+pushd "./bench/litsea-japanese-two-stage-bench"
+cargo build --release
+popd
+
+pushd "./bench/litsea-korean-two-stage-bench"
+cargo build --release
+popd
+
+pushd "./bench/litsea-chinese-two-stage-bench"
+cargo build --release
+popd
+
 pushd "./bench/vibrato-bench"
 RUSTFLAGS='-C target-feature=+avx2' cargo build --release
 popd

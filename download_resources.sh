@@ -66,6 +66,24 @@ if [ ! -f "./chinese_pos.model" ]; then
 fi
 popd
 
+pushd "./bench/litsea-japanese-two-stage-bench"
+if [ ! -f "./japanese_two_stage.model" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.11.0/models/japanese_two_stage.model" -O "./japanese_two_stage.model"
+fi
+popd
+
+pushd "./bench/litsea-korean-two-stage-bench"
+if [ ! -f "./korean_two_stage.model" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.11.0/models/korean_two_stage.model" -O "./korean_two_stage.model"
+fi
+popd
+
+pushd "./bench/litsea-chinese-two-stage-bench"
+if [ ! -f "./chinese_two_stage.model" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.11.0/models/chinese_two_stage.model" -O "./chinese_two_stage.model"
+fi
+popd
+
 pushd "./bench/vibrato-bench"
 if [ ! -d "ipadic-mecab-2_7_0" ]; then
     wget https://github.com/daac-tools/vibrato/releases/download/v0.5.0/ipadic-mecab-2_7_0.tar.xz

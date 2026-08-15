@@ -49,6 +49,12 @@ do
 
     ./bench/litsea-chinese-pos-bench/target/release/litsea-chinese-pos-bench < $INPUT_DATA_ZH
 
+    ./bench/litsea-japanese-two-stage-bench/target/release/litsea-japanese-two-stage-bench < $INPUT_DATA
+
+    ./bench/litsea-korean-two-stage-bench/target/release/litsea-korean-two-stage-bench < $INPUT_DATA_KO
+
+    ./bench/litsea-chinese-two-stage-bench/target/release/litsea-chinese-two-stage-bench < $INPUT_DATA_ZH
+
     ./bench/vibrato-bench/target/release/vibrato-bench --dictname="ipadic-mecab-2_7_0" < $INPUT_DATA
 
     ./bench/vibrato-bench/target/release/vibrato-bench --dictname="unidic-cwj-3_1_1" < $INPUT_DATA
