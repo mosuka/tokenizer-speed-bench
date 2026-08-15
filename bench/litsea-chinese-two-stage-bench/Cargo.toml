@@ -1,5 +1,5 @@
 [package]
-name = "litsea-japanese-pos-bench"
+name = "litsea-chinese-two-stage-bench"
 version = "0.1.0"
 edition = "2021"
 
