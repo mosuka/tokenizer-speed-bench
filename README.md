@@ -1,5 +1,7 @@
 # Benchmarking of various tokenizers
 
+English | [日本語](README_ja.md)
+
 This repository contains benchmarking tools of various tokenizers.
 
 ## Overview
