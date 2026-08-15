@@ -32,37 +32,37 @@ popd
 
 pushd "./bench/litsea-japanese-bench"
 if [ ! -f "./japanese.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.10.0/models/japanese.model" -O "./japanese.model"
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.11.0/models/japanese.model" -O "./japanese.model"
 fi
 popd
 
 pushd "./bench/litsea-japanese-pos-bench"
 if [ ! -f "./japanese_pos.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.10.0/models/japanese_pos.model" -O "./japanese_pos.model"
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.11.0/models/japanese_pos.model" -O "./japanese_pos.model"
 fi
 popd
 
 pushd "./bench/litsea-korean-bench"
 if [ ! -f "./korean.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.10.0/models/korean.model" -O "./korean.model"
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.11.0/models/korean.model" -O "./korean.model"
 fi
 popd
 
 pushd "./bench/litsea-korean-pos-bench"
 if [ ! -f "./korean_pos.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.10.0/models/korean_pos.model" -O "./korean_pos.model"
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.11.0/models/korean_pos.model" -O "./korean_pos.model"
 fi
 popd
 
 pushd "./bench/litsea-chinese-bench"
 if [ ! -f "./chinese.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.10.0/models/chinese.model" -O "./chinese.model"
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.11.0/models/chinese.model" -O "./chinese.model"
 fi
 popd
 
 pushd "./bench/litsea-chinese-pos-bench"
 if [ ! -f "./chinese_pos.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.10.0/models/chinese_pos.model" -O "./chinese_pos.model"
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.11.0/models/chinese_pos.model" -O "./chinese_pos.model"
 fi
 popd
 
