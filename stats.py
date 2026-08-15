@@ -40,6 +40,8 @@ RE_DICT = [
     ('vibrato-unidic-cwj-3_1_1+compact-dual', re.compile(r'Elapsed-vibrato-unidic-cwj-3_1_1\+compact-dual: ([0-9\.]+) \[sec\]'), CORPUS_JA),
 ]
 
+RSS_RE = re.compile(r'MaxRSS-([A-Za-z0-9_.+\-]+): ([0-9]+) \[KB\]')
+
 
 def count_chars(corpus: str) -> int:
     n_chars = 0
@@ -56,9 +58,16 @@ def mean_std(n_chars: int, times: list[float]) -> (float, float):
     return mean, math.sqrt(dist)
 
 
+def simple_mean_std(values: list[float]) -> (float, float):
+    mean = sum(values) / len(values)
+    dist = sum((value - mean) ** 2 for value in values) / len(values)
+    return mean, math.sqrt(dist)
+
+
 def _main():
     n_chars = {corpus: count_chars(corpus) for _, _, corpus in RE_DICT}
     times = collections.defaultdict(list)
+    rss_kb = collections.defaultdict(list)
     for line in sys.stdin:
         for name, r, _ in RE_DICT:
             m = r.match(line)
@@ -66,14 +75,23 @@ def _main():
                 times[name].append(float(m.group(1)))
                 break
 
+        m = RSS_RE.match(line)
+        if m is not None:
+            rss_kb[m.group(1)].append(float(m.group(2)))
+
     # The first trial should be ignored
     # to avoid unfair results due to lazy loading.
     for name, _, _ in RE_DICT:
         times[name] = times[name][1:]
+        rss_kb[name] = rss_kb[name][1:]
 
     for name, _, corpus in RE_DICT:
         mean, std = mean_std(n_chars[corpus], times[name])
-        print(f'{name} {mean} {std}')
+        if rss_kb[name]:
+            rss_mean, rss_std = simple_mean_std(rss_kb[name])
+            print(f'{name} {mean} {std} {rss_mean} {rss_std}')
+        else:
+            print(f'{name} {mean} {std}')
 
 
 if __name__ == '__main__':
