@@ -6,7 +6,7 @@ use lindera::segmenter::Segmenter;
 
 fn main() {
     let dictionary =
-        load_dictionary(concat!(env!("CARGO_MANIFEST_DIR"), "/lindera-unidic")).unwrap();
+        load_dictionary(concat!(env!("CARGO_MANIFEST_DIR"), "/lindera-ko-dic")).unwrap();
 
     let segmenter = Segmenter::new(Mode::Normal, dictionary, None);
 
@@ -25,7 +25,7 @@ fn main() {
     }
 
     let duration = start.elapsed();
-    println!("Elapsed-lindera-unidic: {} [sec]", duration.as_secs_f64());
+    println!("Elapsed-lindera-ko-dic: {} [sec]", duration.as_secs_f64());
 
     dbg!(n_words);
 }
