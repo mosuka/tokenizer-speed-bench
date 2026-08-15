@@ -119,11 +119,6 @@ tokenizers measured together on the same run, not as absolute benchmarks.
 Reproduce with `./run_all.sh | tee ./results` and `./stats.py < ./results`
 as described above.
 
-## Disclaimer
-
-This software is developed by LegalForce, Inc.,
-but not an officially supported LegalForce product.
-
 ## License
 
 Licensed under either of
