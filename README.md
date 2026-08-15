@@ -52,45 +52,66 @@ features, so its rows now also cover the `cc-cedict` (Chinese), `jieba`
 (Chinese), and `ko-dic` (Korean) dictionaries in addition to `ipadic` and
 `unidic`.
 
+Model Size is the on-disk size of the dictionary/model file(s) each
+tokenizer actually reads at runtime, not its runtime memory usage: it
+excludes non-runtime data some distributions bundle alongside the
+dictionary (e.g. the raw CSV lexicon source, evaluation sets, and license
+files shipped in the UniDic archive besides the compiled `sys.dic`/
+`matrix.bin`/etc. MeCab itself opens; kuromoji's dictionary is measured from
+its extracted `.bin` files rather than its compressed `.jar`; vibrato's
+`system.dic.zst` is measured decompressed, matching what its `Predictor`
+actually holds in memory). Peak Memory is the maximum resident set size
+(RSS) of the whole benchmark process, measured with `/usr/bin/time -v`
+around each iteration; it therefore includes dictionary loading, not just
+the segmentation loop that Speed measures. `kuromoji` and `sudachi` run via
+`mvn exec:java`, in the same JVM process as Maven itself, so their Peak
+Memory is dominated by Maven's own overhead rather than the library's
+actual footprint and should not be compared directly against the other
+rows.
+
 ### Japanese (`wagahaiwa_nekodearu.txt`, 372,573 characters)
 
-| Tokenizer | Version | Dictionary / Model | Speed [chars/sec] | Std dev |
-| --- | --- | --- | ---: | ---: |
-| vaporetto | 0.6.5 | kytea jp-0.4.7-5.mod | 12,227,567 | 1,452,004 |
-| litsea (japanese) | 0.11.0 | japanese.model | 10,001,822 | 1,383,247 |
-| vibrato | 0.5.2 | ipadic-mecab-2.7.0 | 5,016,972 | 684,970 |
-| litsea (japanese, two-stage) | 0.11.0 | japanese_two_stage.model | 4,645,669 | 594,039 |
-| lindera | 5.2.0 | ipadic | 3,860,516 | 556,228 |
-| mecab | thirdparty submodule | ipadic 2.7.0 | 3,147,088 | 351,059 |
-| lindera | 5.2.0 | unidic | 2,795,718 | 393,652 |
-| vibrato | 0.5.2 | unidic-cwj-3.1.1 | 2,680,070 | 297,335 |
-| litsea (japanese, POS) | 0.11.0 | japanese_pos.model | 1,593,400 | 198,189 |
-| rust-tinysegmenter | 0.1.1 | - | 1,511,267 | 180,117 |
-| kytea | thirdparty submodule | jp-0.4.7-5.mod | 1,351,072 | 166,630 |
-| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 1,247,304 | 124,965 |
-| sudachi.rs | git rev `90fd606` | sudachi-dictionary-20210802-core | 1,139,695 | 162,292 |
-| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 1,048,616 | 180,883 |
-| vibrato | 0.5.2 | unidic-cwj-3.1.1+compact-dual | 846,818 | 97,223 |
-| sudachi | 0.7.5 | sudachi-dictionary-20210802-core | 380,163 | 65,002 |
+| Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| vaporetto | 0.6.5 | kytea jp-0.4.7-5.mod | 67.9 MB | 12,478,243 | 1,139,576 | 177.5 MB |
+| litsea (japanese) | 0.11.0 | japanese.model | 1.1 MB | 10,348,176 | 934,201 | 12.1 MB |
+| vibrato | 0.5.2 | ipadic-mecab-2.7.0 | 45.6 MB | 5,138,285 | 509,648 | 68.9 MB |
+| litsea (japanese, two-stage) | 0.11.0 | japanese_two_stage.model | 5.4 MB | 4,771,555 | 527,686 | 45.0 MB |
+| lindera | 5.2.0 | ipadic | 55.2 MB | 3,913,948 | 531,651 | 36.8 MB |
+| mecab | thirdparty submodule | ipadic 2.7.0 | 50.6 MB | 3,234,859 | 312,807 | 33.2 MB |
+| lindera | 5.2.0 | unidic | 204.0 MB | 2,824,551 | 376,607 | 139.0 MB |
+| vibrato | 0.5.2 | unidic-cwj-3.1.1 | 684.2 MB | 2,711,599 | 182,629 | 724.0 MB |
+| litsea (japanese, POS) | 0.11.0 | japanese_pos.model | 10.5 MB | 1,668,639 | 148,377 | 45.7 MB |
+| rust-tinysegmenter | 0.1.1 | - | - | 1,543,617 | 135,524 | 3.6 MB |
+| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 1,396,260 | 122,506 | 736.8 MB |
+| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 770.9 MB | 1,284,150 | 110,883 | 356.0 MB |
+| sudachi.rs | git rev `90fd606` | sudachi-dictionary-20210802-core | 205.1 MB | 1,165,980 | 131,884 | 111.9 MB |
+| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 1,059,015 | 157,818 | 446.1 MB[^jvm] |
+| vibrato | 0.5.2 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 876,934 | 67,456 | 326.2 MB |
+| sudachi | 0.7.5 | sudachi-dictionary-20210802-core | 205.1 MB | 381,014 | 63,323 | 572.4 MB[^jvm] |
 
 ### Korean (`mujeong.txt`, 320,850 characters)
 
-| Tokenizer | Version | Dictionary / Model | Speed [chars/sec] | Std dev |
-| --- | --- | --- | ---: | ---: |
-| litsea (korean) | 0.11.0 | korean.model | 11,936,090 | 1,665,610 |
-| litsea (korean, two-stage) | 0.11.0 | korean_two_stage.model | 4,749,496 | 653,981 |
-| litsea (korean, POS) | 0.11.0 | korean_pos.model | 2,409,842 | 358,190 |
-| lindera | 5.2.0 | ko-dic | 1,960,057 | 270,483 |
+| Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| litsea (korean) | 0.11.0 | korean.model | 0.1 MB | 12,458,926 | 1,127,294 | 4.5 MB |
+| litsea (korean, two-stage) | 0.11.0 | korean_two_stage.model | 5.0 MB | 4,884,101 | 508,217 | 39.1 MB |
+| litsea (korean, POS) | 0.11.0 | korean_pos.model | 8.5 MB | 2,534,067 | 255,360 | 40.3 MB |
+| lindera | 5.2.0 | ko-dic | 109.5 MB | 2,004,777 | 240,719 | 104.5 MB |
 
 ### Chinese (`rulin_waishi.txt`, 328,153 characters)
 
-| Tokenizer | Version | Dictionary / Model | Speed [chars/sec] | Std dev |
-| --- | --- | --- | ---: | ---: |
-| litsea (chinese) | 0.11.0 | chinese.model | 9,439,464 | 1,333,277 |
-| lindera | 5.2.0 | cc-cedict | 8,110,959 | 1,223,136 |
-| lindera | 5.2.0 | jieba | 6,742,608 | 947,039 |
-| litsea (chinese, two-stage) | 0.11.0 | chinese_two_stage.model | 3,500,228 | 514,461 |
-| litsea (chinese, POS) | 0.11.0 | chinese_pos.model | 1,563,991 | 201,424 |
+| Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| litsea (chinese) | 0.11.0 | chinese.model | 1.9 MB | 9,714,994 | 912,925 | 19.2 MB |
+| lindera | 5.2.0 | cc-cedict | 27.6 MB | 8,204,356 | 1,136,403 | 21.7 MB |
+| lindera | 5.2.0 | jieba | 66.0 MB | 6,798,410 | 852,604 | 61.3 MB |
+| litsea (chinese, two-stage) | 0.11.0 | chinese_two_stage.model | 8.0 MB | 3,597,369 | 376,460 | 56.1 MB |
+| litsea (chinese, POS) | 0.11.0 | chinese_pos.model | 18.4 MB | 1,624,453 | 132,622 | 78.0 MB |
+
+[^jvm]: Measured for the whole `mvn exec:java` process, which runs in the
+same JVM as Maven itself; this figure is dominated by Maven's own overhead,
+not kuromoji's/sudachi's actual memory footprint.
 
 These numbers depend heavily on the measurement environment (CPU, memory
 bandwidth, OS scheduler, JIT/JVM warm-up) and should only be used to compare
