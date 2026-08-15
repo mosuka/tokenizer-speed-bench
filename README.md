@@ -45,44 +45,52 @@ litsea 0.11.0 retrained its plain segmentation models (`japanese.model`,
 many words they produce, so the `litsea (*)` rows below are not directly
 comparable to a run made against litsea 0.10.0. `litsea (*, two-stage)` is a
 new litsea 0.11.0 mode that performs segmentation and POS tagging together
-from a single model file, via `Segmenter::with_two_stage_learner`.
+from a single model file, via `Segmenter::with_two_stage_learner`. `lindera`
+loads its dictionaries from the pre-built archives lindera publishes per
+release (e.g. `lindera-ipadic-5.2.0.zip`) rather than the `embed-*` cargo
+features, so its rows now also cover the `cc-cedict` (Chinese), `jieba`
+(Chinese), and `ko-dic` (Korean) dictionaries in addition to `ipadic` and
+`unidic`.
 
 ### Japanese (`wagahaiwa_nekodearu.txt`, 372,573 characters)
 
 | Tokenizer | Version | Dictionary / Model | Speed [chars/sec] | Std dev |
 | --- | --- | --- | ---: | ---: |
-| vaporetto | 0.6.5 | kytea jp-0.4.7-5.mod | 11,887,308 | 1,439,619 |
-| litsea (japanese) | 0.11.0 | japanese.model | 10,031,762 | 1,091,943 |
-| vibrato | 0.5.2 | ipadic-mecab-2.7.0 | 4,852,747 | 629,358 |
-| litsea (japanese, two-stage) | 0.11.0 | japanese_two_stage.model | 4,606,940 | 559,468 |
-| lindera | 5.2.0 | embed-ipadic | 3,512,409 | 421,321 |
-| mecab | thirdparty submodule | ipadic 2.7.0 | 3,016,492 | 302,566 |
-| lindera | 5.2.0 | embed-unidic | 2,683,701 | 285,774 |
-| vibrato | 0.5.2 | unidic-cwj-3.1.1 | 2,560,478 | 339,420 |
-| litsea (japanese, POS) | 0.11.0 | japanese_pos.model | 1,621,183 | 182,276 |
-| rust-tinysegmenter | 0.1.1 | - | 1,441,466 | 129,023 |
-| kytea | thirdparty submodule | jp-0.4.7-5.mod | 1,336,103 | 153,349 |
-| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 1,256,396 | 119,067 |
-| sudachi.rs | git rev `90fd606` | sudachi-dictionary-20210802-core | 1,096,305 | 120,224 |
-| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 923,513 | 112,202 |
-| vibrato | 0.5.2 | unidic-cwj-3.1.1+compact-dual | 827,210 | 100,040 |
-| sudachi | 0.7.5 | sudachi-dictionary-20210802-core | 325,263 | 44,470 |
+| vaporetto | 0.6.5 | kytea jp-0.4.7-5.mod | 12,227,567 | 1,452,004 |
+| litsea (japanese) | 0.11.0 | japanese.model | 10,001,822 | 1,383,247 |
+| vibrato | 0.5.2 | ipadic-mecab-2.7.0 | 5,016,972 | 684,970 |
+| litsea (japanese, two-stage) | 0.11.0 | japanese_two_stage.model | 4,645,669 | 594,039 |
+| lindera | 5.2.0 | ipadic | 3,860,516 | 556,228 |
+| mecab | thirdparty submodule | ipadic 2.7.0 | 3,147,088 | 351,059 |
+| lindera | 5.2.0 | unidic | 2,795,718 | 393,652 |
+| vibrato | 0.5.2 | unidic-cwj-3.1.1 | 2,680,070 | 297,335 |
+| litsea (japanese, POS) | 0.11.0 | japanese_pos.model | 1,593,400 | 198,189 |
+| rust-tinysegmenter | 0.1.1 | - | 1,511,267 | 180,117 |
+| kytea | thirdparty submodule | jp-0.4.7-5.mod | 1,351,072 | 166,630 |
+| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 1,247,304 | 124,965 |
+| sudachi.rs | git rev `90fd606` | sudachi-dictionary-20210802-core | 1,139,695 | 162,292 |
+| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 1,048,616 | 180,883 |
+| vibrato | 0.5.2 | unidic-cwj-3.1.1+compact-dual | 846,818 | 97,223 |
+| sudachi | 0.7.5 | sudachi-dictionary-20210802-core | 380,163 | 65,002 |
 
 ### Korean (`mujeong.txt`, 320,850 characters)
 
 | Tokenizer | Version | Dictionary / Model | Speed [chars/sec] | Std dev |
 | --- | --- | --- | ---: | ---: |
-| litsea (korean) | 0.11.0 | korean.model | 11,702,576 | 1,221,279 |
-| litsea (korean, two-stage) | 0.11.0 | korean_two_stage.model | 4,732,344 | 488,606 |
-| litsea (korean, POS) | 0.11.0 | korean_pos.model | 2,442,286 | 288,042 |
+| litsea (korean) | 0.11.0 | korean.model | 11,936,090 | 1,665,610 |
+| litsea (korean, two-stage) | 0.11.0 | korean_two_stage.model | 4,749,496 | 653,981 |
+| litsea (korean, POS) | 0.11.0 | korean_pos.model | 2,409,842 | 358,190 |
+| lindera | 5.2.0 | ko-dic | 1,960,057 | 270,483 |
 
 ### Chinese (`rulin_waishi.txt`, 328,153 characters)
 
 | Tokenizer | Version | Dictionary / Model | Speed [chars/sec] | Std dev |
 | --- | --- | --- | ---: | ---: |
-| litsea (chinese) | 0.11.0 | chinese.model | 9,303,267 | 1,141,743 |
-| litsea (chinese, two-stage) | 0.11.0 | chinese_two_stage.model | 3,469,201 | 401,672 |
-| litsea (chinese, POS) | 0.11.0 | chinese_pos.model | 1,568,794 | 167,427 |
+| litsea (chinese) | 0.11.0 | chinese.model | 9,439,464 | 1,333,277 |
+| lindera | 5.2.0 | cc-cedict | 8,110,959 | 1,223,136 |
+| lindera | 5.2.0 | jieba | 6,742,608 | 947,039 |
+| litsea (chinese, two-stage) | 0.11.0 | chinese_two_stage.model | 3,500,228 | 514,461 |
+| litsea (chinese, POS) | 0.11.0 | chinese_pos.model | 1,563,991 | 201,424 |
 
 These numbers depend heavily on the measurement environment (CPU, memory
 bandwidth, OS scheduler, JIT/JVM warm-up) and should only be used to compare
