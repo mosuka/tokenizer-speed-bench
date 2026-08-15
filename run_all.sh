@@ -29,6 +29,12 @@ do
 
     ./bench/lindera-unidic-bench/target/release/lindera-unidic-bench < $INPUT_DATA
 
+    ./bench/lindera-cc-cedict-bench/target/release/lindera-cc-cedict-bench < $INPUT_DATA_ZH
+
+    ./bench/lindera-jieba-bench/target/release/lindera-jieba-bench < $INPUT_DATA_ZH
+
+    ./bench/lindera-ko-dic-bench/target/release/lindera-ko-dic-bench < $INPUT_DATA_KO
+
     pushd ./bench/sudachi-bench
     mvn exec:java -Dexec.mainClass=sudachi_bench.App < ../../$INPUT_DATA
     popd

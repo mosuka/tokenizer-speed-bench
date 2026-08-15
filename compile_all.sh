@@ -60,6 +60,18 @@ pushd "./bench/lindera-unidic-bench"
 cargo build --release
 popd
 
+pushd "./bench/lindera-cc-cedict-bench"
+cargo build --release
+popd
+
+pushd "./bench/lindera-jieba-bench"
+cargo build --release
+popd
+
+pushd "./bench/lindera-ko-dic-bench"
+cargo build --release
+popd
+
 pushd "./bench/sudachi-bench"
 mvn compile
 popd
