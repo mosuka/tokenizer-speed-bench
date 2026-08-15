@@ -50,6 +50,10 @@ popd
 
 pushd "./bench/kuromoji-bench"
 mvn compile
+# Resolve the runtime classpath once here so run_all.sh can launch the JVM
+# directly with `java -cp`, instead of going through `mvn exec:java`, which
+# would run in the same JVM as Maven itself and inflate the measured RSS.
+mvn dependency:build-classpath -Dmdep.outputFile=classpath.txt
 popd
 
 pushd "./bench/lindera-ipadic-bench"
@@ -74,6 +78,7 @@ popd
 
 pushd "./bench/sudachi-bench"
 mvn compile
+mvn dependency:build-classpath -Dmdep.outputFile=classpath.txt
 popd
 
 pushd "./bench/sudachirs-bench"

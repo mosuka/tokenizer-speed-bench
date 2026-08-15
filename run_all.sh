@@ -2,7 +2,7 @@
 
 set -eux
 
-which mvn
+which java
 
 # Runs a command via `/usr/bin/time -v`, passing through the command's own
 # stdout/stderr as before, then emits a MaxRSS-<name> line derived from
@@ -37,7 +37,7 @@ do
     LD_LIBRARY_PATH=$PWD/thirdparty/mecab/tmpusr/lib measure_rss "mecab-unidic-3_1_1" ./bench/mecab-unidic-3_1_1-bench/a.out < $INPUT_DATA
 
     pushd ./bench/kuromoji-bench
-    measure_rss "kuromoji" mvn exec:java -Dexec.mainClass=kuromoji_bench.App < ../../$INPUT_DATA
+    measure_rss "kuromoji" java -cp "target/classes:$(cat classpath.txt)" kuromoji_bench.App < ../../$INPUT_DATA
     popd
 
     measure_rss "lindera-ipadic" ./bench/lindera-ipadic-bench/target/release/lindera-ipadic-bench < $INPUT_DATA
@@ -51,7 +51,7 @@ do
     measure_rss "lindera-ko-dic" ./bench/lindera-ko-dic-bench/target/release/lindera-ko-dic-bench < $INPUT_DATA_KO
 
     pushd ./bench/sudachi-bench
-    measure_rss "sudachi" mvn exec:java -Dexec.mainClass=sudachi_bench.App < ../../$INPUT_DATA
+    measure_rss "sudachi" java -cp "target/classes:$(cat classpath.txt)" sudachi_bench.App < ../../$INPUT_DATA
     popd
 
     measure_rss "sudachi.rs" ./bench/sudachirs-bench/target/release/sudachirs-bench < $INPUT_DATA
