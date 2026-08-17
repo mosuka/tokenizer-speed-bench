@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-lindera = "5.2.0"
+lindera = "5.3.0"

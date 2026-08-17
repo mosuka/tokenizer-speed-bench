@@ -31,7 +31,7 @@ statistics from available results.
 
 ## Results
 
-Measured 2026-08-15 on the following environment.
+Measured 2026-08-17 on the following environment.
 
 * CPU: Intel Core i7-1185G7 (4 cores / 8 threads, up to 4.8GHz)
 * Memory: 32GiB
@@ -50,10 +50,13 @@ comparable to a run made against litsea 0.10.0. `litsea (*, two-stage)` is a
 new litsea 0.11.0 mode that performs segmentation and POS tagging together
 from a single model file, via `Segmenter::with_two_stage_learner`. `lindera`
 loads its dictionaries from the pre-built archives lindera publishes per
-release (e.g. `lindera-ipadic-5.2.0.zip`) rather than the `embed-*` cargo
+release (e.g. `lindera-ipadic-5.3.0.zip`) rather than the `embed-*` cargo
 features, so its rows now also cover the `cc-cedict` (Chinese), `jieba`
 (Chinese), and `ko-dic` (Korean) dictionaries in addition to `ipadic` and
-`unidic`.
+`unidic`. lindera 5.3.0 replaced the dictionary's system automaton with an
+in-place trie and reads the connection cost matrix in place, so its
+dictionaries are smaller on disk than 5.2.0's and its measured peak memory
+dropped by half or more.
 
 Model Size is the on-disk size of the dictionary/model file(s) each
 tokenizer actually opens at runtime (verified with `strace`), not its
@@ -77,41 +80,41 @@ footprint is not counted against them.
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| vaporetto | 0.6.5 | kytea jp-0.4.7-5.mod | 67.9 MB | 12,600,106 | 2,088,127 | 177.5 MB |
-| litsea (japanese) | 0.11.0 | japanese.model | 1.1 MB | 10,392,921 | 1,444,316 | 12.1 MB |
-| vibrato | 0.5.2 | ipadic-mecab-2.7.0 | 45.6 MB | 5,279,422 | 765,667 | 68.9 MB |
-| litsea (japanese, two-stage) | 0.11.0 | japanese_two_stage.model | 5.4 MB | 4,883,425 | 746,471 | 45.0 MB |
-| lindera | 5.2.0 | ipadic | 55.2 MB | 3,925,298 | 612,325 | 36.8 MB |
-| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 3,246,825 | 435,416 | 33.1 MB |
-| lindera | 5.2.0 | unidic | 204.0 MB | 2,895,138 | 395,889 | 139.0 MB |
-| vibrato | 0.5.2 | unidic-cwj-3.1.1 | 684.2 MB | 2,814,177 | 360,073 | 724.0 MB |
-| litsea (japanese, POS) | 0.11.0 | japanese_pos.model | 10.5 MB | 1,721,239 | 246,725 | 45.7 MB |
-| rust-tinysegmenter | 0.1.1 | - | - | 1,516,314 | 192,685 | 3.7 MB |
-| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 1,440,471 | 201,393 | 736.7 MB |
-| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 1,327,531 | 159,184 | 355.9 MB |
-| sudachi.rs | git rev `90fd606` | sudachi-dictionary-20210802-core | 205.1 MB | 1,204,008 | 184,386 | 111.9 MB |
-| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 1,033,107 | 166,657 | 353.9 MB |
-| vibrato | 0.5.2 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 882,617 | 123,781 | 326.2 MB |
-| sudachi | 0.7.5 | sudachi-dictionary-20210802-core | 205.1 MB | 377,368 | 72,352 | 531.9 MB |
+| vaporetto | 0.6.5 | kytea jp-0.4.7-5.mod | 67.9 MB | 14,209,001 | 779,883 | 177.5 MB |
+| litsea (japanese) | 0.11.0 | japanese.model | 1.1 MB | 11,150,587 | 783,401 | 12.1 MB |
+| vibrato | 0.5.2 | ipadic-mecab-2.7.0 | 45.6 MB | 5,832,656 | 310,645 | 68.9 MB |
+| litsea (japanese, two-stage) | 0.11.0 | japanese_two_stage.model | 5.4 MB | 5,436,945 | 381,927 | 45.0 MB |
+| lindera | 5.3.0 | ipadic | 45.3 MB | 4,455,493 | 355,521 | 17.9 MB |
+| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 3,562,406 | 186,765 | 33.1 MB |
+| lindera | 5.3.0 | unidic | 190.1 MB | 3,242,249 | 197,651 | 65.4 MB |
+| vibrato | 0.5.2 | unidic-cwj-3.1.1 | 684.2 MB | 3,152,880 | 105,220 | 724.0 MB |
+| litsea (japanese, POS) | 0.11.0 | japanese_pos.model | 10.5 MB | 1,904,358 | 105,960 | 45.7 MB |
+| rust-tinysegmenter | 0.1.1 | - | - | 1,653,686 | 91,980 | 3.6 MB |
+| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 1,592,817 | 74,086 | 736.8 MB |
+| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 1,447,312 | 56,452 | 355.9 MB |
+| sudachi.rs | git rev `90fd606` | sudachi-dictionary-20210802-core | 205.1 MB | 1,374,232 | 91,308 | 111.9 MB |
+| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 1,191,043 | 94,895 | 353.4 MB |
+| vibrato | 0.5.2 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 985,040 | 49,518 | 326.2 MB |
+| sudachi | 0.7.5 | sudachi-dictionary-20210802-core | 205.1 MB | 441,239 | 41,186 | 530.8 MB |
 
 ### Korean (`mujeong.txt`, 320,850 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (korean) | 0.11.0 | korean.model | 0.1 MB | 12,362,271 | 1,611,206 | 4.5 MB |
-| litsea (korean, two-stage) | 0.11.0 | korean_two_stage.model | 5.0 MB | 4,994,341 | 713,082 | 39.1 MB |
-| litsea (korean, POS) | 0.11.0 | korean_pos.model | 8.5 MB | 2,624,632 | 317,211 | 40.3 MB |
-| lindera | 5.2.0 | ko-dic | 109.5 MB | 2,054,657 | 271,663 | 104.6 MB |
+| litsea (korean) | 0.11.0 | korean.model | 0.1 MB | 13,443,129 | 620,338 | 4.5 MB |
+| litsea (korean, two-stage) | 0.11.0 | korean_two_stage.model | 5.0 MB | 5,476,118 | 306,403 | 39.1 MB |
+| litsea (korean, POS) | 0.11.0 | korean_pos.model | 8.5 MB | 2,825,188 | 186,564 | 40.3 MB |
+| lindera | 5.3.0 | ko-dic | 81.6 MB | 2,355,639 | 134,128 | 42.8 MB |
 
 ### Chinese (`rulin_waishi.txt`, 328,153 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (chinese) | 0.11.0 | chinese.model | 1.9 MB | 9,891,193 | 1,126,787 | 19.2 MB |
-| lindera | 5.2.0 | cc-cedict | 27.6 MB | 8,180,348 | 1,283,901 | 21.8 MB |
-| lindera | 5.2.0 | jieba | 66.0 MB | 6,967,445 | 1,017,252 | 61.3 MB |
-| litsea (chinese, two-stage) | 0.11.0 | chinese_two_stage.model | 8.0 MB | 3,688,857 | 530,095 | 56.1 MB |
-| litsea (chinese, POS) | 0.11.0 | chinese_pos.model | 18.4 MB | 1,679,795 | 196,232 | 78.1 MB |
+| litsea (chinese) | 0.11.0 | chinese.model | 1.9 MB | 10,612,650 | 688,027 | 19.2 MB |
+| lindera | 5.3.0 | cc-cedict | 22.1 MB | 9,318,838 | 488,228 | 10.0 MB |
+| lindera | 5.3.0 | jieba | 48.9 MB | 7,672,154 | 452,231 | 22.5 MB |
+| litsea (chinese, two-stage) | 0.11.0 | chinese_two_stage.model | 8.0 MB | 4,116,113 | 255,938 | 56.1 MB |
+| litsea (chinese, POS) | 0.11.0 | chinese_pos.model | 18.4 MB | 1,850,206 | 100,672 | 78.0 MB |
 
 These numbers depend heavily on the measurement environment (CPU, memory
 bandwidth, OS scheduler, JIT/JVM warm-up) and should only be used to compare
