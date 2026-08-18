@@ -28,12 +28,12 @@ korean_two_stage.model
 chinese_two_stage.model
 
 lindera-ipadic
-lindera-ipadic-5.2.0.zip
+lindera-ipadic-*.zip
 lindera-unidic
-lindera-unidic-5.2.0.zip
+lindera-unidic-*.zip
 lindera-cc-cedict
-lindera-cc-cedict-5.2.0.zip
+lindera-cc-cedict-*.zip
 lindera-jieba
-lindera-jieba-5.2.0.zip
+lindera-jieba-*.zip
 lindera-ko-dic
-lindera-ko-dic-5.2.0.zip
+lindera-ko-dic-*.zip
