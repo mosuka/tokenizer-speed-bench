@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-litsea = { version = "0.11.0", default-features = false }
+litsea = { version = "0.12.0", default-features = false }
