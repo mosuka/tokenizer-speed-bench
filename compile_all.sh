@@ -93,23 +93,11 @@ pushd "./bench/litsea-japanese-bench"
 cargo build --release
 popd
 
-pushd "./bench/litsea-japanese-pos-bench"
-cargo build --release
-popd
-
 pushd "./bench/litsea-korean-bench"
 cargo build --release
 popd
 
-pushd "./bench/litsea-korean-pos-bench"
-cargo build --release
-popd
-
 pushd "./bench/litsea-chinese-bench"
-cargo build --release
-popd
-
-pushd "./bench/litsea-chinese-pos-bench"
 cargo build --release
 popd
 
@@ -122,6 +110,14 @@ cargo build --release
 popd
 
 pushd "./bench/litsea-chinese-two-stage-bench"
+cargo build --release
+popd
+
+pushd "./bench/litsea-english-bench"
+cargo build --release
+popd
+
+pushd "./bench/litsea-english-two-stage-bench"
 cargo build --release
 popd
 

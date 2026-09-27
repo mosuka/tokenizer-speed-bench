@@ -23,9 +23,8 @@ korean.model
 korean_pos.model
 chinese.model
 chinese_pos.model
-japanese_two_stage.model
-korean_two_stage.model
-chinese_two_stage.model
+english.model
+english_pos.model
 
 lindera-ipadic
 lindera-ipadic-*.zip
