@@ -10,7 +10,7 @@ fn main() {
     two_stage_learner
         .load_model_from_path(Path::new(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/korean_two_stage.model"
+            "/korean_pos.model"
         )))
         .unwrap();
     let segmenter = Segmenter::with_two_stage_learner(Language::Korean, two_stage_learner);

@@ -20,6 +20,22 @@ if [ ! -d "./unidic-cwj-3.1.1" ]; then
     unzip "./unidic-cwj-3.1.1.zip"
 fi
 
+if [ ! -f "./wagahaiwa_nekodearu.txt" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/resources/wagahaiwa_nekodearu.txt" -O "./wagahaiwa_nekodearu.txt"
+fi
+
+if [ ! -f "./mujeong.txt" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/resources/mujeong.txt" -O "./mujeong.txt"
+fi
+
+if [ ! -f "./rulin_waishi.txt" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/resources/rulin_waishi.txt" -O "./rulin_waishi.txt"
+fi
+
+if [ ! -f "./pride_and_prejudice.txt" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/resources/pride_and_prejudice.txt" -O "./pride_and_prejudice.txt"
+fi
+
 popd
 
 pushd "./bench/sudachi-bench"
@@ -32,55 +48,49 @@ popd
 
 pushd "./bench/litsea-japanese-bench"
 if [ ! -f "./japanese.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.12.0/models/japanese.model" -O "./japanese.model"
-fi
-popd
-
-pushd "./bench/litsea-japanese-pos-bench"
-if [ ! -f "./japanese_pos.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.12.0/models/japanese_pos.model" -O "./japanese_pos.model"
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/models/japanese.model" -O "./japanese.model"
 fi
 popd
 
 pushd "./bench/litsea-korean-bench"
 if [ ! -f "./korean.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.12.0/models/korean.model" -O "./korean.model"
-fi
-popd
-
-pushd "./bench/litsea-korean-pos-bench"
-if [ ! -f "./korean_pos.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.12.0/models/korean_pos.model" -O "./korean_pos.model"
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/models/korean.model" -O "./korean.model"
 fi
 popd
 
 pushd "./bench/litsea-chinese-bench"
 if [ ! -f "./chinese.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.12.0/models/chinese.model" -O "./chinese.model"
-fi
-popd
-
-pushd "./bench/litsea-chinese-pos-bench"
-if [ ! -f "./chinese_pos.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.12.0/models/chinese_pos.model" -O "./chinese_pos.model"
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/models/chinese.model" -O "./chinese.model"
 fi
 popd
 
 pushd "./bench/litsea-japanese-two-stage-bench"
-if [ ! -f "./japanese_two_stage.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.12.0/models/japanese_two_stage.model" -O "./japanese_two_stage.model"
+if [ ! -f "./japanese_pos.model" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/models/japanese_pos.model" -O "./japanese_pos.model"
 fi
 popd
 
 pushd "./bench/litsea-korean-two-stage-bench"
-if [ ! -f "./korean_two_stage.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.12.0/models/korean_two_stage.model" -O "./korean_two_stage.model"
+if [ ! -f "./korean_pos.model" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/models/korean_pos.model" -O "./korean_pos.model"
 fi
 popd
 
 pushd "./bench/litsea-chinese-two-stage-bench"
-if [ ! -f "./chinese_two_stage.model" ]; then
-    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.12.0/models/chinese_two_stage.model" -O "./chinese_two_stage.model"
+if [ ! -f "./chinese_pos.model" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/models/chinese_pos.model" -O "./chinese_pos.model"
+fi
+popd
+
+pushd "./bench/litsea-english-bench"
+if [ ! -f "./english.model" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/models/english.model" -O "./english.model"
+fi
+popd
+
+pushd "./bench/litsea-english-two-stage-bench"
+if [ ! -f "./english_pos.model" ]; then
+    wget "https://raw.githubusercontent.com/mosuka/litsea/v0.14.3/models/english_pos.model" -O "./english_pos.model"
 fi
 popd
 

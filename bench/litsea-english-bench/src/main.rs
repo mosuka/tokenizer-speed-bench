@@ -1,19 +1,19 @@
 use std::io::BufRead;
 use std::path::Path;
 
+use litsea::adaboost::AdaBoost;
 use litsea::language::Language;
-use litsea::perceptron::AveragedPerceptron;
 use litsea::segmenter::Segmenter;
 
 fn main() {
-    let mut pos_learner = AveragedPerceptron::new();
-    pos_learner
+    let mut learner = AdaBoost::new(0.01, 100);
+    learner
         .load_model_from_path(Path::new(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/korean_pos.model"
+            "/english.model"
         )))
         .unwrap();
-    let segmenter = Segmenter::with_pos_learner(Language::Korean, pos_learner);
+    let segmenter = Segmenter::with_learner(Language::English, learner);
 
     let lines: Vec<_> = std::io::stdin()
         .lock()
@@ -24,14 +24,11 @@ fn main() {
 
     let start = std::time::Instant::now();
     for line in &lines {
-        n_words += segmenter.segment_with_pos(line).unwrap().len();
+        n_words += segmenter.segment(line).len();
     }
     let duration = start.elapsed();
 
-    println!(
-        "Elapsed-litsea-korean-pos: {} [sec]",
-        duration.as_secs_f64()
-    );
+    println!("Elapsed-litsea-english: {} [sec]", duration.as_secs_f64());
 
     dbg!(n_words);
 }

@@ -11,6 +11,7 @@ import sys
 CORPUS_JA = './resources/wagahaiwa_nekodearu.txt'
 CORPUS_KO = './resources/mujeong.txt'
 CORPUS_ZH = './resources/rulin_waishi.txt'
+CORPUS_EN = './resources/pride_and_prejudice.txt'
 
 RE_DICT = [
     ('kytea', re.compile(r'Elapsed-kytea: ([0-9\.]+) \[sec\]'), CORPUS_JA),
@@ -27,14 +28,13 @@ RE_DICT = [
     ('sudachi.rs', re.compile(r'Elapsed-sudachi.rs: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('rust-tinysegmenter', re.compile(r'Elapsed-rust-tinysegmenter: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('litsea-japanese', re.compile(r'Elapsed-litsea-japanese: ([0-9\.]+) \[sec\]'), CORPUS_JA),
-    ('litsea-japanese-pos', re.compile(r'Elapsed-litsea-japanese-pos: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('litsea-korean', re.compile(r'Elapsed-litsea-korean: ([0-9\.]+) \[sec\]'), CORPUS_KO),
-    ('litsea-korean-pos', re.compile(r'Elapsed-litsea-korean-pos: ([0-9\.]+) \[sec\]'), CORPUS_KO),
     ('litsea-chinese', re.compile(r'Elapsed-litsea-chinese: ([0-9\.]+) \[sec\]'), CORPUS_ZH),
-    ('litsea-chinese-pos', re.compile(r'Elapsed-litsea-chinese-pos: ([0-9\.]+) \[sec\]'), CORPUS_ZH),
     ('litsea-japanese-two-stage', re.compile(r'Elapsed-litsea-japanese-two-stage: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('litsea-korean-two-stage', re.compile(r'Elapsed-litsea-korean-two-stage: ([0-9\.]+) \[sec\]'), CORPUS_KO),
     ('litsea-chinese-two-stage', re.compile(r'Elapsed-litsea-chinese-two-stage: ([0-9\.]+) \[sec\]'), CORPUS_ZH),
+    ('litsea-english', re.compile(r'Elapsed-litsea-english: ([0-9\.]+) \[sec\]'), CORPUS_EN),
+    ('litsea-english-two-stage', re.compile(r'Elapsed-litsea-english-two-stage: ([0-9\.]+) \[sec\]'), CORPUS_EN),
     ('vibrato-ipadic-mecab-2_7_0', re.compile(r'Elapsed-vibrato-ipadic-mecab-2_7_0: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('vibrato-unidic-cwj-3_1_1', re.compile(r'Elapsed-vibrato-unidic-cwj-3_1_1: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('vibrato-unidic-cwj-3_1_1+compact-dual', re.compile(r'Elapsed-vibrato-unidic-cwj-3_1_1\+compact-dual: ([0-9\.]+) \[sec\]'), CORPUS_JA),

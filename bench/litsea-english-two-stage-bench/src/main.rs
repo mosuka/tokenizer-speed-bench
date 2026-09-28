@@ -2,18 +2,18 @@ use std::io::BufRead;
 use std::path::Path;
 
 use litsea::language::Language;
-use litsea::perceptron::AveragedPerceptron;
 use litsea::segmenter::Segmenter;
+use litsea::two_stage::TwoStageLearner;
 
 fn main() {
-    let mut pos_learner = AveragedPerceptron::new();
-    pos_learner
+    let mut two_stage_learner = TwoStageLearner::new();
+    two_stage_learner
         .load_model_from_path(Path::new(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/japanese_pos.model"
+            "/english_pos.model"
         )))
         .unwrap();
-    let segmenter = Segmenter::with_pos_learner(Language::Japanese, pos_learner);
+    let segmenter = Segmenter::with_two_stage_learner(Language::English, two_stage_learner);
 
     let lines: Vec<_> = std::io::stdin()
         .lock()
@@ -29,7 +29,7 @@ fn main() {
     let duration = start.elapsed();
 
     println!(
-        "Elapsed-litsea-japanese-pos: {} [sec]",
+        "Elapsed-litsea-english-two-stage: {} [sec]",
         duration.as_secs_f64()
     );
 
