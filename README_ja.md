@@ -32,7 +32,7 @@
 
 ## 計測結果
 
-2026-09-28 に以下の環境で計測しました。
+2026-09-29 に以下の環境で計測しました。
 
 * CPU: Intel Core i7-1185G7（4 コア / 8 スレッド、最大 4.8GHz）
 * メモリ: 32GiB
@@ -54,16 +54,28 @@ joint POS アーキテクチャが削除されたため、その行はなくな�
 `Segmenter::with_two_stage_learner` により 1 つのモデルファイルで
 分かち書きと品詞付与を同時に行うモードです。`korean_pos.model` は
 0.13.0 で元の空白を保持したコーパスにより再学習されたため、
-`litsea (korean, two-stage)` の行は 0.12.0 の計測結果とは直接比較
-できません。分かち書きモデル（`japanese.model`、`korean.model`、
-`chinese.model`）は 0.12.0 から変更ありません。英語の表は今回新設した
-もので、0.13.0 で追加された litsea の英語モデル 2 つだけを、litsea 自身の
-ベンチマークが英語に使う `pride_and_prejudice.txt` で計測しています。
+`litsea (korean, two-stage)` の行は 0.12.0 の計測結果（2026-08-20）とは
+直接比較できません。分かち書きモデル（`japanese.model`、`korean.model`、
+`chinese.model`）は 0.12.0 から変更ありません。英語の表は 2026-09-28 の
+計測で新設したもので、0.13.0 で追加された litsea の英語モデル 2 つだけを、
+litsea 自身のベンチマークが英語に使う `pride_and_prejudice.txt` で計測しています。
 英語では他のトークナイザは計測していません。`lindera` は `embed-*` cargo
 feature ではなく、lindera がリリースごとに公開しているビルド済み辞書
 アーカイブ（例: `lindera-ipadic-5.3.0.zip`）から辞書を読み込むため、
 `ipadic`・`unidic` に加えて `cc-cedict`（中国語）、`jieba`（中国語）、
 `ko-dic`（韓国語）の辞書もカバーしています。
+
+`vibrato` は他の Rust 製トークナイザと同じく、素の `cargo build --release`
+でビルドしています。前回の計測結果（2026-09-28）は
+`-C target-feature=+avx2` 付きのビルドによるもので、この場合
+`unidic-cwj-3.1.1+compact-dual` の連接コストの計算に AVX2 の gather 命令
+（`vpgatherdd`）が使われます。このマシンではそのビルドでの同じ行が
+439,712 chars/sec で、今回の値の約半分でした。プロファイルでは、分かち書きの
+処理時間の大半が gather 命令に集中していました。この CPU では Gather Data Sampling の
+microcode mitigation が有効で、Intel はこの mitigation が gather 命令を
+多用するコードを遅くすると説明していますが、差のうちどれだけがこの
+mitigation によるものかは計測していません。2026 年 8 月の計測結果も
+素のビルドによるものです。
 
 辞書・モデルサイズ（Dictionary / Model Size）は、各トークナイザが実行時に
 実際に開くファイル（`strace` で検証済み）のディスク上のサイズであり、
@@ -86,51 +98,45 @@ Java の 2 エンジンも Maven 自身のメモリが計上されないよう
 
 | トークナイザ | バージョン | 辞書・モデル | 辞書・モデルサイズ | 速度 [chars/sec] | 標準偏差 | ピークメモリ |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| vaporetto | 0.6.5 | kytea jp-0.4.7-5.mod | 67.9 MB | 13,708,513 | 1,886,236 | 177.5 MB |
-| litsea (japanese) | 0.14.3 | japanese.model | 1.1 MB | 9,846,654 | 1,173,394 | 11.9 MB |
-| vibrato | 0.5.2 | ipadic-mecab-2.7.0 | 45.6 MB | 5,534,292 | 649,461 | 68.9 MB |
-| litsea (japanese, two-stage) | 0.14.3 | japanese_pos.model | 5.4 MB | 4,942,196 | 611,597 | 45.0 MB |
-| lindera | 5.3.0 | ipadic | 45.3 MB | 4,196,532 | 707,337 | 17.9 MB |
-| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 3,410,079 | 456,515 | 33.1 MB |
-| lindera | 5.3.0 | unidic | 190.1 MB | 3,020,502 | 516,751 | 63.4 MB |
-| vibrato | 0.5.2 | unidic-cwj-3.1.1 | 684.2 MB | 2,923,535 | 411,532 | 724.0 MB |
-| rust-tinysegmenter | 0.1.1 | - | - | 1,601,006 | 213,442 | 3.7 MB |
-| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 1,523,347 | 189,316 | 736.8 MB |
-| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 1,366,194 | 159,935 | 355.9 MB |
-| sudachi.rs | git rev `90fd606` | sudachi-dictionary-20210802-core | 205.1 MB | 1,287,739 | 212,049 | 112.0 MB |
-| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 1,123,410 | 183,813 | 353.2 MB |
-| vibrato | 0.5.2 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 439,712 | 53,372 | 326.2 MB |
-| sudachi | 0.7.5 | sudachi-dictionary-20210802-core | 205.1 MB | 407,921 | 78,402 | 532.3 MB |
+| vaporetto | 0.6.5 | kytea jp-0.4.7-5.mod | 67.9 MB | 13,833,194 | 748,702 | 177.5 MB |
+| litsea (japanese) | 0.14.3 | japanese.model | 1.1 MB | 10,076,216 | 509,951 | 12.0 MB |
+| vibrato | 0.5.2 | ipadic-mecab-2.7.0 | 45.6 MB | 5,573,064 | 413,150 | 68.9 MB |
+| litsea (japanese, two-stage) | 0.14.3 | japanese_pos.model | 5.4 MB | 4,978,287 | 337,272 | 45.0 MB |
+| lindera | 5.3.0 | ipadic | 45.3 MB | 4,028,073 | 390,383 | 17.8 MB |
+| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 3,433,390 | 167,856 | 33.1 MB |
+| vibrato | 0.5.2 | unidic-cwj-3.1.1 | 684.2 MB | 3,012,259 | 177,514 | 724.0 MB |
+| lindera | 5.3.0 | unidic | 190.1 MB | 2,924,434 | 251,189 | 63.1 MB |
+| rust-tinysegmenter | 0.1.1 | - | - | 1,595,601 | 75,519 | 3.7 MB |
+| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 1,542,198 | 85,786 | 736.8 MB |
+| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 1,390,977 | 92,277 | 350.7 MB |
+| sudachi.rs | git rev `90fd606` | sudachi-dictionary-20210802-core | 205.1 MB | 1,265,510 | 95,766 | 111.8 MB |
+| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 1,063,970 | 107,672 | 353.2 MB |
+| vibrato | 0.5.2 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 963,707 | 51,169 | 326.2 MB |
+| sudachi | 0.7.5 | sudachi-dictionary-20210802-core | 205.1 MB | 382,263 | 43,875 | 531.2 MB |
 
 ### 韓国語（`mujeong.txt`、320,850 文字）
 
 | トークナイザ | バージョン | 辞書・モデル | 辞書・モデルサイズ | 速度 [chars/sec] | 標準偏差 | ピークメモリ |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (korean) | 0.14.3 | korean.model | 0.1 MB | 15,403,882 | 1,677,007 | 4.1 MB |
-| litsea (korean, two-stage) | 0.14.3 | korean_pos.model | 3.9 MB | 4,748,428 | 531,080 | 32.3 MB |
-| lindera | 5.3.0 | ko-dic | 81.6 MB | 2,208,435 | 362,370 | 42.4 MB |
+| litsea (korean) | 0.14.3 | korean.model | 0.1 MB | 15,425,382 | 705,818 | 4.1 MB |
+| litsea (korean, two-stage) | 0.14.3 | korean_pos.model | 3.9 MB | 4,808,836 | 295,756 | 32.3 MB |
+| lindera | 5.3.0 | ko-dic | 81.6 MB | 2,226,304 | 136,206 | 42.3 MB |
 
 ### 中国語（`rulin_waishi.txt`、328,153 文字）
 
 | トークナイザ | バージョン | 辞書・モデル | 辞書・モデルサイズ | 速度 [chars/sec] | 標準偏差 | ピークメモリ |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (chinese) | 0.14.3 | chinese.model | 1.9 MB | 9,274,934 | 1,143,029 | 19.1 MB |
-| lindera | 5.3.0 | cc-cedict | 22.1 MB | 8,632,360 | 1,557,491 | 10.0 MB |
-| lindera | 5.3.0 | jieba | 48.9 MB | 7,085,668 | 1,297,080 | 22.4 MB |
-| litsea (chinese, two-stage) | 0.14.3 | chinese_pos.model | 8.0 MB | 3,758,586 | 478,455 | 56.1 MB |
+| litsea (chinese) | 0.14.3 | chinese.model | 1.9 MB | 9,475,465 | 704,071 | 19.2 MB |
+| lindera | 5.3.0 | cc-cedict | 22.1 MB | 8,603,073 | 687,734 | 9.9 MB |
+| lindera | 5.3.0 | jieba | 48.9 MB | 7,039,302 | 537,167 | 22.4 MB |
+| litsea (chinese, two-stage) | 0.14.3 | chinese_pos.model | 8.0 MB | 3,829,770 | 310,391 | 56.1 MB |
 
 ### 英語（`pride_and_prejudice.txt`、677,531 文字）
 
 | トークナイザ | バージョン | 辞書・モデル | 辞書・モデルサイズ | 速度 [chars/sec] | 標準偏差 | ピークメモリ |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (english) | 0.14.3 | english.model | 0.1 MB | 19,256,684 | 2,309,002 | 4.4 MB |
-| litsea (english, two-stage) | 0.14.3 | english_pos.model | 2.9 MB | 7,000,538 | 885,232 | 23.6 MB |
-
-`unidic-cwj-3.1.1+compact-dual` を使う `vibrato` の行は、コード・辞書・
-ビルドフラグをまったく変えていないにもかかわらず、このベンチマークの実行
-ごとに大きく変動しています（約 84,000〜985,000 chars/sec）。古い Rust
-ツールチェーンで再ビルドしても今回の値が再現したため、この行を異なる
-実行間で比較する際は注意してください。
+| litsea (english) | 0.14.3 | english.model | 0.1 MB | 19,428,307 | 1,099,160 | 4.4 MB |
+| litsea (english, two-stage) | 0.14.3 | english_pos.model | 2.9 MB | 7,187,453 | 469,541 | 23.7 MB |
 
 これらの数値は計測環境（CPU、メモリ帯域、OS スケジューラ、JIT/JVM の
 ウォームアップ）に大きく依存するため、絶対的なベンチマークとしてでは
