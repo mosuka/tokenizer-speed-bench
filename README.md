@@ -18,10 +18,10 @@ The following commands prepare resources (e.g. model data) and compile source co
 % ./compile_all.sh
 ```
 
-The scripts target Linux, where the results below are measured. They also run
-on macOS, which is useful for a quick, rough comparison. There, install Rust, a
-JDK and the Xcode Command Line Tools, plus the following tools from Homebrew,
-before running the commands above. On Windows, run the scripts in WSL.
+The scripts run on Linux and on macOS; the results below are measured on
+macOS. On macOS, install Rust, a JDK and the Xcode Command Line Tools, plus the
+following tools from Homebrew, before running the commands above. On Windows,
+run the scripts in WSL.
 
 ```sh
 % brew install wget autoconf automake libtool maven
@@ -47,109 +47,133 @@ iterations. Set `ITERATIONS` to measure fewer iterations for a rough comparison.
 
 ## Results
 
-Measured 2026-09-29 on the following environment.
+Measured 2026-11-11 on the following environment.
 
-* CPU: Intel Core i7-1185G7 (4 cores / 8 threads, up to 4.8GHz)
-* Memory: 32GiB
-* OS: Ubuntu 24.04.5 LTS, Linux 6.8.0-142-generic
-* Toolchains: rustc 1.98.0, OpenJDK 21.0.12.1, Apache Maven 3.8.7, g++ 13.3.0
+* Machine: MacBook Air, Apple M4 (10 cores)
+* Memory: 24GiB
+* OS: macOS 27.2
+* Toolchains: rustc 1.99.0, OpenJDK 25.0.1, Apache Maven 3.10.0,
+  Apple clang 21.0.0
+
+The results up to 2026-09-29 were measured on another machine (Intel Core
+i7-1185G7, Ubuntu 24.04) with older versions, so they are not comparable with
+these.
 
 Each tokenizer segmented its corpus 100 times (after 1 warm-up iteration,
 excluded from the statistics). Speed is in characters per second; higher is
 better. Std dev is the population standard deviation across the 100
 iterations.
 
-litsea 0.13.0 removed the joint POS architecture that the earlier
-`litsea (*, POS)` rows measured, so those rows are gone. Two-stage is now
-litsea's only segmentation + POS pipeline, and its bundled models were
-renamed from `*_two_stage.model` to `*_pos.model`; the Japanese and Chinese
-files are byte-identical to the 0.12.0 ones. `litsea (*, two-stage)`
-performs segmentation and POS tagging together from a single model file,
-via `Segmenter::with_two_stage_learner`. `korean_pos.model` was retrained
-in 0.13.0 on a corpus that keeps the original spacing, so the
-`litsea (korean, two-stage)` row is not directly comparable to the 0.12.0
-run (2026-08-20). The segmentation models (`japanese.model`, `korean.model`,
-`chinese.model`) are unchanged from 0.12.0. The English table, added in the
-2026-09-28 run, measures only litsea's two English models, added in 0.13.0, on
-`pride_and_prejudice.txt`, the corpus litsea's own benchmark uses for
-English; no other tokenizer is measured on English here. `lindera` loads
-its dictionaries from
-the pre-built archives lindera publishes per release (e.g.
-`lindera-ipadic-5.3.0.zip`) rather than the `embed-*` cargo features, so
-its rows also cover the `cc-cedict` (Chinese), `jieba` (Chinese), and
-`ko-dic` (Korean) dictionaries in addition to `ipadic` and `unidic`.
+`litsea (*, two-stage)` performs segmentation and POS tagging together from
+a single model file, via `Segmenter::with_two_stage_learner`; the other litsea
+rows only segment. `lindera` loads its dictionaries from the pre-built archives
+lindera publishes per release (e.g. `lindera-ipadic-6.2.0.zip`) rather than the
+`embed-*` cargo features, so its rows also cover the `cc-cedict` (Chinese),
+`jieba` (Chinese), and `ko-dic` (Korean) dictionaries in addition to `ipadic`
+and `unidic`. Since lindera 6.1.0, ko-dic applies mecab-ko's left-space
+penalty by default, and the `ko-dic` row uses that default.
 
+`mecab` has two UniDic rows: `unidic-cwj-3.1.1`, the same dictionary as the
+`vibrato` UniDic rows (every pre-built UniDic cwj dictionary vibrato
+distributes is 3.1.1), and `unidic-cwj-202512`, the latest UniDic release. `sudachi`
+and `sudachi.rs` read the same SudachiDict v20261015 core dictionary in the V1
+binary format, the only format Sudachi 0.8.2 and sudachi.rs 0.7.0 read;
+sudachi.rs 0.7 also changed parts of its analysis to match the Java version.
 `vibrato` is built with a plain `cargo build --release`, like the other Rust
-tokenizers. The previous results (2026-09-28) used a build with
-`-C target-feature=+avx2`, which makes the `unidic-cwj-3.1.1+compact-dual`
-connector use AVX2 gather instructions (`vpgatherdd`). On this machine that
-build measured 439,712 chars/sec for that row, about half of this run's
-figure, and profiling attributed most of its segmentation time to the
-gather instructions. This CPU has the Gather Data Sampling microcode mitigation
-enabled, which Intel says slows gather-heavy code, but how much of the gap
-it causes was not measured. The August 2026 results also used a plain build.
+tokenizers. The KyTea model `jp-0.4.7-5.mod`, used by `kytea` and `vaporetto`,
+is no longer served at its original URL, so `download_resources.sh` fetches
+the Wayback Machine's copy and checks its SHA-256.
 
-Model Size is the on-disk size of the dictionary/model file(s) each
-tokenizer actually opens at runtime (verified with `strace`), not its
-runtime memory usage: it excludes non-runtime data some distributions
-bundle alongside the dictionary (e.g. the raw CSV lexicon source,
-evaluation sets, license files, and the compile/training-only `model.bin`
-and `*.def` sources shipped in the MeCab dictionary directories besides the
-compiled `sys.dic`/`matrix.bin`/`char.bin`/`unk.dic` the tagger itself
-opens; kuromoji's dictionary is measured from its extracted `.bin` files
-rather than its compressed `.jar`; vibrato's `system.dic.zst` is measured
-decompressed, matching what it actually holds in memory). Peak Memory is
-the maximum resident set size (RSS) of the whole benchmark process,
-measured with `/usr/bin/time -v`
-around each iteration; it therefore includes dictionary loading, not just
-the segmentation loop that Speed measures. Every engine is measured this
-way, including the two Java ones, which `run_all.sh` launches directly with
-`java -cp` rather than through `mvn exec:java` so that Maven's own
-footprint is not counted against them.
+`alyze` is turbopuffer's text analysis library. Its kuromoji, nori and smartcn
+analyzers are ports of the Lucene analyzers Elasticsearch uses, and the alyze
+rows call their tokenizers (`tokenize`), not the Elasticsearch filter chain
+(`analyze`). kuromoji runs in `Mode::Normal` and nori with
+`DecompoundMode::None`, so that, like the `lindera`, `mecab` and `vibrato`
+rows, they do not decompound (alyze's defaults are `Mode::Search` and
+`DecompoundMode::Discard`). Both keep the default
+`discard_punctuation: true`; smartcn always emits punctuation tokens. The
+alyze rows reuse their token buffer across lines, as alyze intends, while
+lindera's `Segmenter::segment` allocates per call; on the other hand, alyze's
+kuromoji and nori fill in the part of speech, reading and so on of every token,
+while lindera reads token details lazily. `alyze (UAX #29)` is alyze's
+rule-based word segmenter (a DFA, with no dictionary); it reports every span
+between word boundaries, and the bench counts the word-like ones. On English it
+is a baseline, not a like-for-like comparison with litsea's learned
+segmenter.
+
+Dictionary / Model Size is the on-disk size of the dictionary/model file(s)
+each tokenizer actually opens at runtime, not its runtime memory usage. macOS
+has no `strace`, so the opened files were logged by an `open()` interposer
+loaded with `DYLD_INSERT_LIBRARIES`; kytea reads its model through the C++
+standard library, whose opens the interposer does not see, so its size is that
+of the model file given with `-model`. The column excludes non-runtime data
+some distributions bundle alongside the dictionary (e.g. the raw CSV lexicon
+source, evaluation sets, license files, and the compile/training-only
+`model.bin` and `*.def` sources shipped in the MeCab dictionary directories
+besides the compiled `sys.dic`/`matrix.bin`/`char.bin`/`unk.dic` the tagger
+itself opens; kuromoji's dictionary is measured from its extracted `.bin`
+files rather than its compressed `.jar`; vibrato's `system.dic.zst` is
+measured decompressed, matching what it actually holds in memory). For the
+tokenizers that embed their dictionary in the executable, it is the size of
+the embedded data: vaporetto's predictor, which its build script converts from
+the KyTea model, and alyze's dictionary files, which its build script
+downloads from alyze's GitHub release and checks against a SHA-256 (the
+archive without licenses and notices). 1 MB is 1,048,576 bytes. Peak Memory is
+the maximum resident set size (RSS) of the whole benchmark process, measured
+with `/usr/bin/time -l` around each iteration; it therefore includes
+dictionary loading, not just the segmentation loop that Speed measures. Every
+engine is measured this way, including the two Java ones, which `run_all.sh`
+launches directly with `java -cp` rather than through `mvn exec:java` so that
+Maven's own footprint is not counted against them.
 
 ### Japanese (`wagahaiwa_nekodearu.txt`, 372,573 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| vaporetto | 0.6.5 | kytea jp-0.4.7-5.mod | 67.9 MB | 13,833,194 | 748,702 | 177.5 MB |
-| litsea (japanese) | 0.14.3 | japanese.model | 1.1 MB | 10,076,216 | 509,951 | 12.0 MB |
-| vibrato | 0.5.2 | ipadic-mecab-2.7.0 | 45.6 MB | 5,573,064 | 413,150 | 68.9 MB |
-| litsea (japanese, two-stage) | 0.14.3 | japanese_pos.model | 5.4 MB | 4,978,287 | 337,272 | 45.0 MB |
-| lindera | 5.3.0 | ipadic | 45.3 MB | 4,028,073 | 390,383 | 17.8 MB |
-| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 3,433,390 | 167,856 | 33.1 MB |
-| vibrato | 0.5.2 | unidic-cwj-3.1.1 | 684.2 MB | 3,012,259 | 177,514 | 724.0 MB |
-| lindera | 5.3.0 | unidic | 190.1 MB | 2,924,434 | 251,189 | 63.1 MB |
-| rust-tinysegmenter | 0.1.1 | - | - | 1,595,601 | 75,519 | 3.7 MB |
-| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 1,542,198 | 85,786 | 736.8 MB |
-| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 1,390,977 | 92,277 | 350.7 MB |
-| sudachi.rs | git rev `90fd606` | sudachi-dictionary-20210802-core | 205.1 MB | 1,265,510 | 95,766 | 111.8 MB |
-| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 1,063,970 | 107,672 | 353.2 MB |
-| vibrato | 0.5.2 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 963,707 | 51,169 | 326.2 MB |
-| sudachi | 0.7.5 | sudachi-dictionary-20210802-core | 205.1 MB | 382,263 | 43,875 | 531.2 MB |
+| vaporetto | 0.7.0 | kytea jp-0.4.7-5.mod | 80.6 MB | 37,111,410 | 1,524,907 | 188.4 MB |
+| litsea (japanese) | 0.16.0 | japanese.model | 1.1 MB | 18,359,094 | 347,663 | 14.9 MB |
+| vibrato | 0.5.3 | ipadic-mecab-2.7.0 | 45.6 MB | 9,631,719 | 334,599 | 80.5 MB |
+| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 9,403,685 | 921,828 | 31.9 MB |
+| litsea (japanese, two-stage) | 0.16.0 | japanese_pos.model | 5.4 MB | 9,178,386 | 509,463 | 58.0 MB |
+| lindera | 6.2.0 | ipadic | 45.3 MB | 8,625,286 | 572,397 | 18.7 MB |
+| lindera | 6.2.0 | unidic | 189.9 MB | 6,136,242 | 605,597 | 53.2 MB |
+| alyze (kuromoji) | 0.2.0 | ipadic (embedded) | 12.5 MB | 5,747,868 | 144,808 | 19.5 MB |
+| vibrato | 0.5.3 | unidic-cwj-3.1.1 | 684.2 MB | 5,212,278 | 518,688 | 742.7 MB |
+| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 4,125,996 | 455,675 | 245.1 MB |
+| rust-tinysegmenter | 0.1.1 | - | - | 3,597,208 | 69,880 | 5.1 MB |
+| mecab | thirdparty submodule | unidic-cwj-202512 | 1,252.8 MB | 2,734,657 | 290,049 | 356.7 MB |
+| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 2,729,299 | 184,974 | 253.4 MB |
+| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 2,671,859 | 164,701 | 526.7 MB |
+| sudachi.rs | git tag `v0.7.0` | sudachi-dictionary-20261015-core | 192.9 MB | 2,297,939 | 105,658 | 162.4 MB |
+| vibrato | 0.5.3 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 2,004,000 | 103,802 | 351.1 MB |
+| sudachi | 0.8.2 | sudachi-dictionary-20261015-core | 192.9 MB | 917,756 | 63,106 | 395.4 MB |
 
 ### Korean (`mujeong.txt`, 320,850 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (korean) | 0.14.3 | korean.model | 0.1 MB | 15,425,382 | 705,818 | 4.1 MB |
-| litsea (korean, two-stage) | 0.14.3 | korean_pos.model | 3.9 MB | 4,808,836 | 295,756 | 32.3 MB |
-| lindera | 5.3.0 | ko-dic | 81.6 MB | 2,226,304 | 136,206 | 42.3 MB |
+| litsea (korean) | 0.16.0 | korean.model | 0.1 MB | 27,752,303 | 553,816 | 5.2 MB |
+| litsea (korean, two-stage) | 0.16.0 | korean_pos.model | 3.9 MB | 8,121,009 | 247,887 | 42.5 MB |
+| lindera | 6.2.0 | ko-dic | 81.6 MB | 4,935,683 | 143,525 | 80.9 MB |
+| alyze (nori) | 0.2.0 | mecab-ko-dic (embedded) | 43.2 MB | 3,369,468 | 137,082 | 45.0 MB |
 
 ### Chinese (`rulin_waishi.txt`, 328,153 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (chinese) | 0.14.3 | chinese.model | 1.9 MB | 9,475,465 | 704,071 | 19.2 MB |
-| lindera | 5.3.0 | cc-cedict | 22.1 MB | 8,603,073 | 687,734 | 9.9 MB |
-| lindera | 5.3.0 | jieba | 48.9 MB | 7,039,302 | 537,167 | 22.4 MB |
-| litsea (chinese, two-stage) | 0.14.3 | chinese_pos.model | 8.0 MB | 3,829,770 | 310,391 | 56.1 MB |
+| lindera | 6.2.0 | cc-cedict | 22.1 MB | 18,466,410 | 1,194,313 | 10.3 MB |
+| litsea (chinese) | 0.16.0 | chinese.model | 1.9 MB | 17,476,213 | 695,845 | 23.6 MB |
+| lindera | 6.2.0 | jieba | 49.0 MB | 14,480,349 | 1,222,270 | 22.9 MB |
+| alyze (smartcn) | 0.2.0 | smartcn (embedded) | 4.5 MB | 6,978,738 | 209,246 | 21.7 MB |
+| litsea (chinese, two-stage) | 0.16.0 | chinese_pos.model | 8.0 MB | 6,912,335 | 225,153 | 72.5 MB |
 
 ### English (`pride_and_prejudice.txt`, 677,531 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (english) | 0.14.3 | english.model | 0.1 MB | 19,428,307 | 1,099,160 | 4.4 MB |
-| litsea (english, two-stage) | 0.14.3 | english_pos.model | 2.9 MB | 7,187,453 | 469,541 | 23.7 MB |
+| alyze (UAX #29) | 0.2.0 | - | - | 385,941,358 | 20,237,273 | 3.0 MB |
+| litsea (english) | 0.16.0 | english.model | 0.1 MB | 36,559,299 | 1,577,460 | 5.9 MB |
+| litsea (english, two-stage) | 0.16.0 | english_pos.model | 2.9 MB | 12,540,157 | 355,949 | 30.7 MB |
 
 These numbers depend heavily on the measurement environment (CPU, memory
 bandwidth, OS scheduler, JIT/JVM warm-up) and should only be used to compare

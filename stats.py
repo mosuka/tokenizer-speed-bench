@@ -39,6 +39,10 @@ RE_DICT = [
     ('vibrato-ipadic-mecab-2_7_0', re.compile(r'Elapsed-vibrato-ipadic-mecab-2_7_0: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('vibrato-unidic-cwj-3_1_1', re.compile(r'Elapsed-vibrato-unidic-cwj-3_1_1: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('vibrato-unidic-cwj-3_1_1+compact-dual', re.compile(r'Elapsed-vibrato-unidic-cwj-3_1_1\+compact-dual: ([0-9\.]+) \[sec\]'), CORPUS_JA),
+    ('alyze-kuromoji', re.compile(r'Elapsed-alyze-kuromoji: ([0-9\.]+) \[sec\]'), CORPUS_JA),
+    ('alyze-nori', re.compile(r'Elapsed-alyze-nori: ([0-9\.]+) \[sec\]'), CORPUS_KO),
+    ('alyze-smartcn', re.compile(r'Elapsed-alyze-smartcn: ([0-9\.]+) \[sec\]'), CORPUS_ZH),
+    ('alyze-uax29', re.compile(r'Elapsed-alyze-uax29: ([0-9\.]+) \[sec\]'), CORPUS_EN),
 ]
 
 RSS_RE = re.compile(r'MaxRSS-([A-Za-z0-9_.+\-]+): ([0-9]+) \[KB\]')

@@ -135,3 +135,21 @@ popd
 pushd "./bench/vibrato-bench"
 cargo build --release
 popd
+
+# alyze's build script downloads the dictionaries of the enabled features from
+# its GitHub release, checks their SHA-256 and embeds them in the executable.
+pushd "./bench/alyze-kuromoji-bench"
+cargo build --release
+popd
+
+pushd "./bench/alyze-nori-bench"
+cargo build --release
+popd
+
+pushd "./bench/alyze-smartcn-bench"
+cargo build --release
+popd
+
+pushd "./bench/alyze-uax29-bench"
+cargo build --release
+popd
