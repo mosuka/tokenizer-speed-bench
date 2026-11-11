@@ -24,7 +24,14 @@ make install
 popd
 
 pushd "./thirdparty/kytea"
-autoreconf -i
+# Homebrew installs GNU libtool's libtoolize as glibtoolize on macOS, and
+# /usr/bin/libtool there is Apple's unrelated tool.
+if [ "$(uname)" = "Darwin" ]; then
+    which glibtoolize
+    LIBTOOLIZE=glibtoolize autoreconf -i
+else
+    autoreconf -i
+fi
 ./configure --prefix=$(pwd)/tmpusr --libdir=$(pwd)/tmpusr/lib
 make
 make install
@@ -45,6 +52,10 @@ LIBRARY_PATH=$(cd ../.. && pwd)/thirdparty/mecab/tmpusr/lib g++ -std=c++11 -O3 .
 popd
 
 pushd "./bench/mecab-unidic-3_1_1-bench"
+LIBRARY_PATH=$(cd ../.. && pwd)/thirdparty/mecab/tmpusr/lib g++ -std=c++11 -O3 ./main.cc -I../../thirdparty/mecab/tmpusr/include -lmecab
+popd
+
+pushd "./bench/mecab-unidic-202512-bench"
 LIBRARY_PATH=$(cd ../.. && pwd)/thirdparty/mecab/tmpusr/lib g++ -std=c++11 -O3 ./main.cc -I../../thirdparty/mecab/tmpusr/include -lmecab
 popd
 

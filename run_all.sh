@@ -4,20 +4,34 @@ set -eux
 
 which java
 
-# Runs a command via `/usr/bin/time -v`, passing through the command's own
+# Runs a command via `/usr/bin/time`, passing through the command's own
 # stdout/stderr as before, then emits a MaxRSS-<name> line derived from
-# time's "Maximum resident set size" report so stats.py can aggregate it
+# time's maximum resident set size report so stats.py can aggregate it
 # the same way it already does for the Elapsed-<name> lines.
+#
+# GNU time on Linux (`-v`) reports "Maximum resident set size" in KB. macOS's
+# BSD time has no `-v`; its `-l` reports "maximum resident set size" in bytes,
+# which is converted to KB here.
 measure_rss() {
     local name="$1"
     shift
     local logfile
     logfile=$(mktemp)
-    /usr/bin/time -v "$@" 2>"$logfile"
-    cat "$logfile" >&2
-    awk -v name="$name" '/Maximum resident set size/ { print "MaxRSS-" name ": " $NF " [KB]" }' "$logfile"
+    if [ "$(uname)" = "Darwin" ]; then
+        /usr/bin/time -l "$@" 2>"$logfile"
+        cat "$logfile" >&2
+        awk -v name="$name" '/maximum resident set size/ { print "MaxRSS-" name ": " int($1 / 1024) " [KB]" }' "$logfile"
+    else
+        /usr/bin/time -v "$@" 2>"$logfile"
+        cat "$logfile" >&2
+        awk -v name="$name" '/Maximum resident set size/ { print "MaxRSS-" name ": " $NF " [KB]" }' "$logfile"
+    fi
     rm -f "$logfile"
 }
+
+# Number of measured iterations after the warm-up. Lower it for a quick,
+# rough run, e.g. `ITERATIONS=10 ./run_all.sh`.
+ITERATIONS="${ITERATIONS:-100}"
 
 INPUT_DATA="./resources/wagahaiwa_nekodearu.txt"
 INPUT_DATA_KO="./resources/mujeong.txt"
@@ -25,7 +39,7 @@ INPUT_DATA_ZH="./resources/rulin_waishi.txt"
 INPUT_DATA_EN="./resources/pride_and_prejudice.txt"
 
 # iter=0 is a warm-up to avoid unfair results due to lazy loading.
-for i in $(seq 0 100)
+for i in $(seq 0 "$ITERATIONS")
 do
     echo "iter" $i
 
@@ -36,6 +50,8 @@ do
     LD_LIBRARY_PATH=$PWD/thirdparty/mecab/tmpusr/lib measure_rss "mecab-ipadic-2_7_0" ./bench/mecab-ipadic-2_7_0-bench/a.out < $INPUT_DATA
 
     LD_LIBRARY_PATH=$PWD/thirdparty/mecab/tmpusr/lib measure_rss "mecab-unidic-3_1_1" ./bench/mecab-unidic-3_1_1-bench/a.out < $INPUT_DATA
+
+    LD_LIBRARY_PATH=$PWD/thirdparty/mecab/tmpusr/lib measure_rss "mecab-unidic-202512" ./bench/mecab-unidic-202512-bench/a.out < $INPUT_DATA
 
     pushd ./bench/kuromoji-bench
     measure_rss "kuromoji" java -cp "target/classes:$(cat classpath.txt)" kuromoji_bench.App < ../../$INPUT_DATA

@@ -18,6 +18,15 @@ The following commands prepare resources (e.g. model data) and compile source co
 % ./compile_all.sh
 ```
 
+The scripts target Linux, where the results below are measured. They also run
+on macOS, which is useful for a quick, rough comparison. There, install Rust, a
+JDK and the Xcode Command Line Tools, plus the following tools from Homebrew,
+before running the commands above. On Windows, run the scripts in WSL.
+
+```sh
+% brew install wget autoconf automake libtool maven
+```
+
 ### Measurement
 
 To measure the speed of each tokenizer, run the following commands.
@@ -27,6 +36,13 @@ statistics from available results.
 ```sh
 % ./run_all.sh | tee ./results
 % ./stats.py < ./results
+```
+
+`./run_all.sh` runs every tokenizer for 1 warm-up iteration and 100 measured
+iterations. Set `ITERATIONS` to measure fewer iterations for a rough comparison.
+
+```sh
+% ITERATIONS=10 ./run_all.sh | tee ./results
 ```
 
 ## Results
