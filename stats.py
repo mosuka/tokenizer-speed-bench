@@ -18,6 +18,7 @@ RE_DICT = [
     ('vaporetto', re.compile(r'Elapsed-vaporetto: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('mecab-ipadic-2_7_0', re.compile(r'Elapsed-mecab-ipadic-2_7_0: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('mecab-unidic-3_1_1', re.compile(r'Elapsed-mecab-unidic-3_1_1: ([0-9\.]+) \[sec\]'), CORPUS_JA),
+    ('mecab-unidic-202512', re.compile(r'Elapsed-mecab-unidic-202512: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('kuromoji', re.compile(r'Elapsed-kuromoji: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('lindera-ipadic', re.compile(r'Elapsed-lindera-ipadic: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('lindera-unidic', re.compile(r'Elapsed-lindera-unidic: ([0-9\.]+) \[sec\]'), CORPUS_JA),

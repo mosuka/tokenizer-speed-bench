@@ -12,7 +12,7 @@ fn main() {
         None,
         None,
         Some(PathBuf::from(
-            "./bench/sudachi-bench/sudachi-dictionary-20210802/system_core.dic",
+            "./bench/sudachi-bench/sudachi-dictionary-20261015/system_core.dic",
         )),
     )
     .unwrap();

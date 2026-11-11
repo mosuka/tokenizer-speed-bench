@@ -19,6 +19,16 @@
 % ./compile_all.sh
 ```
 
+スクリプトは Linux 向けで、下の結果も Linux で計測しています。
+macOS でも動くので、ざっくり比べたいときに使えます。
+その場合は、Rust、JDK、Xcode Command Line Tools と、
+以下のツールを Homebrew で入れてから、上のコマンドを実行します。
+Windows では WSL で実行してください。
+
+```sh
+% brew install wget autoconf automake libtool maven
+```
+
 ### 計測
 
 各トークナイザの速度を計測するには、以下のコマンドを実行します。
@@ -28,6 +38,13 @@
 ```sh
 % ./run_all.sh | tee ./results
 % ./stats.py < ./results
+```
+
+`./run_all.sh` は、各トークナイザを 1 回のウォームアップの後に 100 回計測します。
+ざっくり比べるときは、`ITERATIONS` で計測の回数を減らせます。
+
+```sh
+% ITERATIONS=10 ./run_all.sh | tee ./results
 ```
 
 ## 計測結果
