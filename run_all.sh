@@ -96,4 +96,12 @@ do
     measure_rss "vibrato-unidic-cwj-3_1_1" ./bench/vibrato-bench/target/release/vibrato-bench --dictname="unidic-cwj-3_1_1" < $INPUT_DATA
 
     measure_rss "vibrato-unidic-cwj-3_1_1+compact-dual" ./bench/vibrato-bench/target/release/vibrato-bench --dictname="unidic-cwj-3_1_1+compact-dual" < $INPUT_DATA
+
+    measure_rss "alyze-kuromoji" ./bench/alyze-kuromoji-bench/target/release/alyze-kuromoji-bench < $INPUT_DATA
+
+    measure_rss "alyze-nori" ./bench/alyze-nori-bench/target/release/alyze-nori-bench < $INPUT_DATA_KO
+
+    measure_rss "alyze-smartcn" ./bench/alyze-smartcn-bench/target/release/alyze-smartcn-bench < $INPUT_DATA_ZH
+
+    measure_rss "alyze-uax29" ./bench/alyze-uax29-bench/target/release/alyze-uax29-bench < $INPUT_DATA_EN
 done
