@@ -18,11 +18,12 @@ The following commands prepare resources (e.g. model data) and compile source co
 % ./compile_all.sh
 ```
 
-The scripts run on Linux and on macOS; the results below are measured on
-Linux. Install Rust and the following packages before running the commands
-above. On Ubuntu, `libtool-bin` provides the `libtool` command that
-`./compile_all.sh` checks for, and `time` provides the `/usr/bin/time` that
-`./run_all.sh` uses to measure peak memory.
+The scripts run on Linux and on macOS (the mecab-ko build has been checked
+only on Linux); the results below are measured on Linux. Install Rust and the
+following packages before running the commands above. On Ubuntu,
+`libtool-bin` provides the `libtool` command that `./compile_all.sh` checks
+for, and `time` provides the `/usr/bin/time` that `./run_all.sh` uses to
+measure peak memory.
 
 ```sh
 % sudo apt install build-essential patch autoconf automake \
@@ -57,7 +58,7 @@ iterations. Set `ITERATIONS` to measure fewer iterations for a rough comparison.
 
 ## Results
 
-Measured 2026-11-22 on the following environment.
+Measured 2026-11-23 on the following environment.
 
 * Machine: GMKtec EVO-X2, AMD Ryzen AI MAX+ 395 (16 cores, 32 threads)
 * Memory: 126GiB
@@ -81,15 +82,38 @@ a single model file, via `Segmenter::with_two_stage_learner`; the other litsea
 rows only segment. `lindera` loads its dictionaries from the pre-built archives
 lindera publishes per release (e.g. `lindera-ipadic-7.0.0.zip`) rather than the
 `embed-*` cargo features, so its rows also cover the `cc-cedict` (Chinese),
-`jieba` (Chinese), and `ko-dic` (Korean) dictionaries in addition to `ipadic`
-and `unidic`. Since lindera 6.1.0, ko-dic applies mecab-ko's left-space
-penalty by default, and the `ko-dic` row uses that default. lindera 7.0.0
-segments closer to MeCab than 6.2.0 did: it skips whitespace in the lattice,
-carries the context across `、` and `。` within a line, creates unknown words
-as MeCab does, and breaks unknown words at `・`. Its CC-CEDICT and Jieba
-dictionaries are also built from updated sources. On these corpora, the
-token counts change from 6.2.0 by +441 (ipadic), +166 (unidic), -6
-(cc-cedict), +13,958 (jieba) and -257 (ko-dic).
+`jieba` (Chinese), and `ko-dic` (Korean) dictionaries in addition to `ipadic`,
+`unidic`, `unidic-cwj`, `unidic-csj` and `sudachidict`. Since lindera 6.1.0,
+ko-dic applies mecab-ko's left-space penalty by default, and the `ko-dic` row
+uses that default. lindera 7.0.0 segments closer to MeCab than 6.2.0 did: it
+skips whitespace in the lattice, carries the context across `、` and `。`
+within a line, creates unknown words as MeCab does, and breaks unknown words
+at `・`. Its CC-CEDICT and Jieba dictionaries are also built from updated
+sources. On these corpora, the token counts change from 6.2.0 by +441
+(ipadic), +166 (unidic), -6 (cc-cedict), +13,958 (jieba) and -257 (ko-dic).
+
+lindera's Japanese dictionaries come from different sources. `unidic` is
+UniDic 2.1.2. `unidic-cwj` and `unidic-csj` are UniDic 202512 for written
+(CWJ) and spoken (CSJ) Japanese, built from NINJAL's full packages;
+`unidic-cwj` is the same release as the `mecab` row `unidic-cwj-202512`, and
+the two segment the corpus identically except on 4 of its 2,346 lines. The
+corpus is written Japanese, which `unidic-csj` is not made for. `sudachidict`
+is SudachiDict 20260723 with its small, core and notcore lexicons (the full
+edition), so its version and vocabulary differ from those of the `sudachi` and
+`sudachi.rs` rows. lindera reads Sudachi's character definitions but does not
+run Sudachi's plugins, such as input normalization, the joining of katakana
+and numerals, or the A/B/C split modes.
+
+`mecab` and `mecab-ko` also read mecab-ko-dic 2.1.1-20180720, the release
+lindera's `ko-dic` is built from. mecab-ko 0.996-ko-0.9.2 is MeCab modified
+for Korean. mecab-ko-dic's `dicrc` sets `left-space-penalty-factor`, which
+raises the connection cost of parts of speech such as particles when a space
+precedes them, and only mecab-ko reads it. mecab-ko therefore segments the
+corpus exactly as lindera's `ko-dic` does, while the original MeCab segments
+329 of its 3,967 lines differently. `download_resources.sh` fetches mecab-ko's
+release archive and checks its SHA-256, and `compile_all.sh` builds it and
+compiles the dictionary once with mecab-ko's `mecab-dict-index`; the original
+MeCab's `mecab-dict-index` writes the same files.
 
 `mecab` has two UniDic rows: `unidic-cwj-3.1.1`, the same dictionary as the
 `vibrato` UniDic rows (every pre-built UniDic cwj dictionary vibrato
@@ -147,50 +171,55 @@ Maven's own footprint is not counted against them.
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| vaporetto | 0.7.0 | kytea jp-0.4.7-5.mod | 80.6 MB | 24,529,346 | 1,325,511 | 188.5 MB |
-| litsea (japanese) | 0.16.0 | japanese.model | 1.1 MB | 16,231,000 | 978,470 | 11.9 MB |
-| litsea (japanese, two-stage) | 0.16.0 | japanese_pos.model | 5.4 MB | 7,879,683 | 422,145 | 44.7 MB |
-| vibrato | 0.5.3 | ipadic-mecab-2.7.0 | 45.6 MB | 7,396,521 | 376,945 | 68.7 MB |
-| lindera | 7.0.0 | ipadic | 45.3 MB | 6,491,705 | 384,348 | 18.3 MB |
-| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 6,260,699 | 403,827 | 33.7 MB |
-| lindera | 7.0.0 | unidic | 189.9 MB | 4,527,248 | 272,086 | 90.9 MB |
-| alyze (kuromoji) | 0.2.0 | ipadic (embedded) | 12.5 MB | 4,418,573 | 237,108 | 17.9 MB |
-| vibrato | 0.5.3 | unidic-cwj-3.1.1 | 684.2 MB | 3,536,769 | 279,099 | 723.3 MB |
-| rust-tinysegmenter | 0.1.1 | - | - | 2,700,535 | 97,215 | 3.7 MB |
-| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 2,433,187 | 140,828 | 736.3 MB |
-| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 2,246,609 | 169,726 | 371.4 MB |
-| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 2,128,035 | 93,479 | 340.8 MB |
-| sudachi.rs | git tag `v0.7.0` | sudachi-dictionary-20261015-core | 192.9 MB | 1,681,922 | 110,772 | 175.8 MB |
-| vibrato | 0.5.3 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 1,474,615 | 75,764 | 325.7 MB |
-| mecab | thirdparty submodule | unidic-cwj-202512 | 1,252.8 MB | 1,434,051 | 95,986 | 484.9 MB |
-| sudachi | 0.8.2 | sudachi-dictionary-20261015-core | 192.9 MB | 756,611 | 32,729 | 567.4 MB |
+| vaporetto | 0.7.0 | kytea jp-0.4.7-5.mod | 80.6 MB | 24,762,547 | 1,185,744 | 188.6 MB |
+| litsea (japanese) | 0.16.0 | japanese.model | 1.1 MB | 16,638,107 | 654,034 | 12.0 MB |
+| litsea (japanese, two-stage) | 0.16.0 | japanese_pos.model | 5.4 MB | 8,193,895 | 337,115 | 44.9 MB |
+| vibrato | 0.5.3 | ipadic-mecab-2.7.0 | 45.6 MB | 7,859,537 | 226,563 | 68.8 MB |
+| lindera | 7.0.0 | ipadic | 45.3 MB | 6,781,742 | 329,904 | 18.3 MB |
+| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 6,482,138 | 279,234 | 33.8 MB |
+| lindera | 7.0.0 | unidic | 189.9 MB | 4,727,136 | 250,452 | 91.0 MB |
+| alyze (kuromoji) | 0.2.0 | ipadic (embedded) | 12.5 MB | 4,567,718 | 178,696 | 18.0 MB |
+| vibrato | 0.5.3 | unidic-cwj-3.1.1 | 684.2 MB | 4,022,159 | 197,504 | 723.7 MB |
+| lindera | 7.0.0 | sudachidict | 564.9 MB | 3,833,069 | 201,526 | 155.1 MB |
+| rust-tinysegmenter | 0.1.1 | - | - | 2,759,251 | 52,395 | 3.8 MB |
+| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 2,598,992 | 71,566 | 736.5 MB |
+| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 2,524,186 | 128,903 | 371.5 MB |
+| lindera | 7.0.0 | unidic-cwj | 1,244.3 MB | 2,313,688 | 119,081 | 1,009.6 MB |
+| lindera | 7.0.0 | unidic-csj | 1,264.6 MB | 2,290,937 | 119,151 | 1,029.9 MB |
+| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 2,253,468 | 80,966 | 341.1 MB |
+| sudachi.rs | git tag `v0.7.0` | sudachi-dictionary-20261015-core | 192.9 MB | 1,834,100 | 68,889 | 176.0 MB |
+| mecab | thirdparty submodule | unidic-cwj-202512 | 1,252.8 MB | 1,605,914 | 84,358 | 485.2 MB |
+| vibrato | 0.5.3 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 1,587,345 | 55,504 | 326.0 MB |
+| sudachi | 0.8.2 | sudachi-dictionary-20261015-core | 192.9 MB | 805,371 | 32,109 | 566.1 MB |
 
 ### Korean (`mujeong.txt`, 320,850 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (korean) | 0.16.0 | korean.model | 0.1 MB | 23,229,540 | 1,495,830 | 4.1 MB |
-| litsea (korean, two-stage) | 0.16.0 | korean_pos.model | 3.9 MB | 7,326,074 | 435,103 | 32.2 MB |
-| lindera | 7.0.0 | ko-dic | 81.6 MB | 3,483,359 | 135,335 | 83.6 MB |
-| alyze (nori) | 0.2.0 | mecab-ko-dic (embedded) | 43.2 MB | 2,496,290 | 135,221 | 47.7 MB |
+| litsea (korean) | 0.16.0 | korean.model | 0.1 MB | 24,146,228 | 943,141 | 4.2 MB |
+| litsea (korean, two-stage) | 0.16.0 | korean_pos.model | 3.9 MB | 7,677,924 | 265,297 | 32.3 MB |
+| mecab | thirdparty submodule | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 3,647,144 | 159,079 | 70.5 MB |
+| lindera | 7.0.0 | ko-dic | 81.6 MB | 3,613,149 | 94,180 | 83.8 MB |
+| alyze (nori) | 0.2.0 | mecab-ko-dic (embedded) | 43.2 MB | 2,626,843 | 108,301 | 47.7 MB |
+| mecab-ko | 0.996-ko-0.9.2 | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 1,691,201 | 103,063 | 70.3 MB |
 
 ### Chinese (`rulin_waishi.txt`, 328,153 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (chinese) | 0.16.0 | chinese.model | 1.9 MB | 15,735,132 | 860,786 | 19.1 MB |
-| lindera | 7.0.0 | cc-cedict | 22.1 MB | 13,922,220 | 1,100,910 | 9.7 MB |
-| lindera | 7.0.0 | jieba | 49.0 MB | 10,144,422 | 776,767 | 22.3 MB |
-| litsea (chinese, two-stage) | 0.16.0 | chinese_pos.model | 8.0 MB | 5,861,685 | 322,936 | 55.9 MB |
-| alyze (smartcn) | 0.2.0 | smartcn (embedded) | 4.5 MB | 5,110,060 | 339,849 | 22.0 MB |
+| litsea (chinese) | 0.16.0 | chinese.model | 1.9 MB | 16,158,038 | 800,224 | 19.3 MB |
+| lindera | 7.0.0 | cc-cedict | 22.1 MB | 14,779,048 | 845,826 | 9.8 MB |
+| lindera | 7.0.0 | jieba | 49.0 MB | 10,652,010 | 694,348 | 22.3 MB |
+| litsea (chinese, two-stage) | 0.16.0 | chinese_pos.model | 8.0 MB | 6,199,567 | 168,798 | 56.0 MB |
+| alyze (smartcn) | 0.2.0 | smartcn (embedded) | 4.5 MB | 5,391,555 | 276,166 | 22.0 MB |
 
 ### English (`pride_and_prejudice.txt`, 677,531 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| alyze (UAX #29) | 0.2.0 | - | - | 298,534,085 | 30,991,909 | 3.0 MB |
-| litsea (english) | 0.16.0 | english.model | 0.1 MB | 31,675,670 | 2,039,685 | 4.5 MB |
-| litsea (english, two-stage) | 0.16.0 | english_pos.model | 2.9 MB | 11,684,650 | 505,312 | 23.6 MB |
+| alyze (UAX #29) | 0.2.0 | - | - | 315,490,421 | 23,713,663 | 3.0 MB |
+| litsea (english) | 0.16.0 | english.model | 0.1 MB | 32,872,916 | 1,164,280 | 4.6 MB |
+| litsea (english, two-stage) | 0.16.0 | english_pos.model | 2.9 MB | 12,062,422 | 300,157 | 23.7 MB |
 
 These numbers depend heavily on the measurement environment (CPU, memory
 bandwidth, OS scheduler, JIT/JVM warm-up) and should only be used to compare
