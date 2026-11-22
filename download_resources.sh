@@ -123,36 +123,36 @@ popd
 
 pushd "./bench/lindera-ipadic-bench"
 if [ ! -d "./lindera-ipadic" ]; then
-    wget "https://github.com/lindera/lindera/releases/download/v6.2.0/lindera-ipadic-6.2.0.zip" -O "./lindera-ipadic-6.2.0.zip"
-    unzip "./lindera-ipadic-6.2.0.zip"
+    wget "https://github.com/lindera/lindera/releases/download/v7.0.0/lindera-ipadic-7.0.0.zip" -O "./lindera-ipadic-7.0.0.zip"
+    unzip "./lindera-ipadic-7.0.0.zip"
 fi
 popd
 
 pushd "./bench/lindera-unidic-bench"
 if [ ! -d "./lindera-unidic" ]; then
-    wget "https://github.com/lindera/lindera/releases/download/v6.2.0/lindera-unidic-6.2.0.zip" -O "./lindera-unidic-6.2.0.zip"
-    unzip "./lindera-unidic-6.2.0.zip"
+    wget "https://github.com/lindera/lindera/releases/download/v7.0.0/lindera-unidic-7.0.0.zip" -O "./lindera-unidic-7.0.0.zip"
+    unzip "./lindera-unidic-7.0.0.zip"
 fi
 popd
 
 pushd "./bench/lindera-cc-cedict-bench"
 if [ ! -d "./lindera-cc-cedict" ]; then
-    wget "https://github.com/lindera/lindera/releases/download/v6.2.0/lindera-cc-cedict-6.2.0.zip" -O "./lindera-cc-cedict-6.2.0.zip"
-    unzip "./lindera-cc-cedict-6.2.0.zip"
+    wget "https://github.com/lindera/lindera/releases/download/v7.0.0/lindera-cc-cedict-7.0.0.zip" -O "./lindera-cc-cedict-7.0.0.zip"
+    unzip "./lindera-cc-cedict-7.0.0.zip"
 fi
 popd
 
 pushd "./bench/lindera-jieba-bench"
 if [ ! -d "./lindera-jieba" ]; then
-    wget "https://github.com/lindera/lindera/releases/download/v6.2.0/lindera-jieba-6.2.0.zip" -O "./lindera-jieba-6.2.0.zip"
-    unzip "./lindera-jieba-6.2.0.zip"
+    wget "https://github.com/lindera/lindera/releases/download/v7.0.0/lindera-jieba-7.0.0.zip" -O "./lindera-jieba-7.0.0.zip"
+    unzip "./lindera-jieba-7.0.0.zip"
 fi
 popd
 
 pushd "./bench/lindera-ko-dic-bench"
 if [ ! -d "./lindera-ko-dic" ]; then
-    wget "https://github.com/lindera/lindera/releases/download/v6.2.0/lindera-ko-dic-6.2.0.zip" -O "./lindera-ko-dic-6.2.0.zip"
-    unzip "./lindera-ko-dic-6.2.0.zip"
+    wget "https://github.com/lindera/lindera/releases/download/v7.0.0/lindera-ko-dic-7.0.0.zip" -O "./lindera-ko-dic-7.0.0.zip"
+    unzip "./lindera-ko-dic-7.0.0.zip"
 fi
 popd
 
