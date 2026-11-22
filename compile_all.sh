@@ -37,6 +37,21 @@ make
 make install
 popd
 
+pushd "./thirdparty/mecab-ko"
+./configure --prefix=$(pwd)/tmpusr --libdir=$(pwd)/tmpusr/lib
+make
+make install
+popd
+
+# Compile mecab-ko-dic in place with mecab-ko's mecab-dict-index. The release
+# has no aclocal.m4, so after `./configure` its Makefile tries to regenerate
+# the build system with automake 1.11 and fails; this runs the command of its
+# Makefile directly instead. The mecab-dict-index of mecab-ko and of the
+# original MeCab write the same files, and both mecab-ko-dic benches read them.
+pushd "./resources/mecab-ko-dic-2.1.1-20180720"
+../../thirdparty/mecab-ko/tmpusr/libexec/mecab/mecab-dict-index -d . -o . -f UTF-8 -t UTF-8
+popd
+
 # Build benches
 
 pushd "./bench/vaporetto-bench"
@@ -59,6 +74,14 @@ pushd "./bench/mecab-unidic-202512-bench"
 LIBRARY_PATH=$(cd ../.. && pwd)/thirdparty/mecab/tmpusr/lib g++ -std=c++11 -O3 ./main.cc -I../../thirdparty/mecab/tmpusr/include -lmecab
 popd
 
+pushd "./bench/mecab-ko-dic-2_1_1-bench"
+LIBRARY_PATH=$(cd ../.. && pwd)/thirdparty/mecab/tmpusr/lib g++ -std=c++11 -O3 ./main.cc -I../../thirdparty/mecab/tmpusr/include -lmecab
+popd
+
+pushd "./bench/mecab-ko-ko-dic-2_1_1-bench"
+LIBRARY_PATH=$(cd ../.. && pwd)/thirdparty/mecab-ko/tmpusr/lib g++ -std=c++11 -O3 ./main.cc -I../../thirdparty/mecab-ko/tmpusr/include -lmecab
+popd
+
 pushd "./bench/kuromoji-bench"
 mvn compile
 # Resolve the runtime classpath once here so run_all.sh can launch the JVM
@@ -72,6 +95,18 @@ cargo build --release
 popd
 
 pushd "./bench/lindera-unidic-bench"
+cargo build --release
+popd
+
+pushd "./bench/lindera-sudachidict-bench"
+cargo build --release
+popd
+
+pushd "./bench/lindera-unidic-cwj-bench"
+cargo build --release
+popd
+
+pushd "./bench/lindera-unidic-csj-bench"
 cargo build --release
 popd
 

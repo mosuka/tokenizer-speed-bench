@@ -45,6 +45,14 @@ if [ ! -d "./unidic-cwj-202512" ]; then
     unzip "./unidic-cwj-202512.zip" -d "./unidic-cwj-202512"
 fi
 
+# mecab-ko-dic, the Korean dictionary for MeCab that lindera's ko-dic is built
+# from. compile_all.sh compiles it in place.
+if [ ! -d "./mecab-ko-dic-2.1.1-20180720" ]; then
+    wget "https://bitbucket.org/eunjeon/mecab-ko-dic/downloads/mecab-ko-dic-2.1.1-20180720.tar.gz" -O "./mecab-ko-dic-2.1.1-20180720.tar.gz"
+    echo "fd62d3d6d8fa85145528065fabad4d7cb20f6b2201e71be4081a4e9701a5b330  ./mecab-ko-dic-2.1.1-20180720.tar.gz" | sha256_check
+    tar -xzf "./mecab-ko-dic-2.1.1-20180720.tar.gz"
+fi
+
 if [ ! -f "./wagahaiwa_nekodearu.txt" ]; then
     wget "https://raw.githubusercontent.com/mosuka/litsea/v0.16.0/resources/wagahaiwa_nekodearu.txt" -O "./wagahaiwa_nekodearu.txt"
 fi
@@ -61,6 +69,18 @@ if [ ! -f "./pride_and_prejudice.txt" ]; then
     wget "https://raw.githubusercontent.com/mosuka/litsea/v0.16.0/resources/pride_and_prejudice.txt" -O "./pride_and_prejudice.txt"
 fi
 
+popd
+
+pushd "./thirdparty"
+# mecab-ko is MeCab 0.996 modified for Korean. Unlike the original MeCab, it
+# reads the left-space-penalty-factor that mecab-ko-dic's dicrc sets.
+# 0.996-ko-0.9.2 (2015) is its last release.
+if [ ! -d "./mecab-ko" ]; then
+    wget "https://bitbucket.org/eunjeon/mecab-ko/downloads/mecab-0.996-ko-0.9.2.tar.gz" -O "./mecab-0.996-ko-0.9.2.tar.gz"
+    echo "d0e0f696fc33c2183307d4eb87ec3b17845f90b81bf843bd0981e574ee3c38cb  ./mecab-0.996-ko-0.9.2.tar.gz" | sha256_check
+    mkdir "./mecab-ko"
+    tar -xzf "./mecab-0.996-ko-0.9.2.tar.gz" -C "./mecab-ko" --strip-components=1
+fi
 popd
 
 pushd "./bench/sudachi-bench"
@@ -132,6 +152,27 @@ pushd "./bench/lindera-unidic-bench"
 if [ ! -d "./lindera-unidic" ]; then
     wget "https://github.com/lindera/lindera/releases/download/v7.0.0/lindera-unidic-7.0.0.zip" -O "./lindera-unidic-7.0.0.zip"
     unzip "./lindera-unidic-7.0.0.zip"
+fi
+popd
+
+pushd "./bench/lindera-sudachidict-bench"
+if [ ! -d "./lindera-sudachidict" ]; then
+    wget "https://github.com/lindera/lindera/releases/download/v7.0.0/lindera-sudachidict-7.0.0.zip" -O "./lindera-sudachidict-7.0.0.zip"
+    unzip "./lindera-sudachidict-7.0.0.zip"
+fi
+popd
+
+pushd "./bench/lindera-unidic-cwj-bench"
+if [ ! -d "./lindera-unidic-cwj" ]; then
+    wget "https://github.com/lindera/lindera/releases/download/v7.0.0/lindera-unidic-cwj-7.0.0.zip" -O "./lindera-unidic-cwj-7.0.0.zip"
+    unzip "./lindera-unidic-cwj-7.0.0.zip"
+fi
+popd
+
+pushd "./bench/lindera-unidic-csj-bench"
+if [ ! -d "./lindera-unidic-csj" ]; then
+    wget "https://github.com/lindera/lindera/releases/download/v7.0.0/lindera-unidic-csj-7.0.0.zip" -O "./lindera-unidic-csj-7.0.0.zip"
+    unzip "./lindera-unidic-csj-7.0.0.zip"
 fi
 popd
 

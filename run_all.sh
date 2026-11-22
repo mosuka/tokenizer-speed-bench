@@ -53,6 +53,10 @@ do
 
     LD_LIBRARY_PATH=$PWD/thirdparty/mecab/tmpusr/lib measure_rss "mecab-unidic-202512" ./bench/mecab-unidic-202512-bench/a.out < $INPUT_DATA
 
+    LD_LIBRARY_PATH=$PWD/thirdparty/mecab/tmpusr/lib measure_rss "mecab-ko-dic-2_1_1" ./bench/mecab-ko-dic-2_1_1-bench/a.out < $INPUT_DATA_KO
+
+    LD_LIBRARY_PATH=$PWD/thirdparty/mecab-ko/tmpusr/lib measure_rss "mecab-ko-ko-dic-2_1_1" ./bench/mecab-ko-ko-dic-2_1_1-bench/a.out < $INPUT_DATA_KO
+
     pushd ./bench/kuromoji-bench
     measure_rss "kuromoji" java -cp "target/classes:$(cat classpath.txt)" kuromoji_bench.App < ../../$INPUT_DATA
     popd
@@ -60,6 +64,12 @@ do
     measure_rss "lindera-ipadic" ./bench/lindera-ipadic-bench/target/release/lindera-ipadic-bench < $INPUT_DATA
 
     measure_rss "lindera-unidic" ./bench/lindera-unidic-bench/target/release/lindera-unidic-bench < $INPUT_DATA
+
+    measure_rss "lindera-sudachidict" ./bench/lindera-sudachidict-bench/target/release/lindera-sudachidict-bench < $INPUT_DATA
+
+    measure_rss "lindera-unidic-cwj" ./bench/lindera-unidic-cwj-bench/target/release/lindera-unidic-cwj-bench < $INPUT_DATA
+
+    measure_rss "lindera-unidic-csj" ./bench/lindera-unidic-csj-bench/target/release/lindera-unidic-csj-bench < $INPUT_DATA
 
     measure_rss "lindera-cc-cedict" ./bench/lindera-cc-cedict-bench/target/release/lindera-cc-cedict-bench < $INPUT_DATA_ZH
 
