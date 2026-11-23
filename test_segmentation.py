@@ -346,6 +346,23 @@ class BlocksForTest(unittest.TestCase):
                 segmentation.blocks_for(['a', 'b'], path)
 
 
+class PercentTest(unittest.TestCase):
+    def test_two_decimals(self):
+        self.assertEqual(segmentation.percent(0.5), '50.00')
+        self.assertEqual(segmentation.percent(0.123456), '12.35')
+        self.assertEqual(segmentation.percent(0.0), '0.00')
+
+    def test_only_an_exact_match_is_100(self):
+        self.assertEqual(segmentation.percent(1.0), '100.00')
+        # 99.996 % rounds to 100.00 but is not an exact match.
+        self.assertEqual(segmentation.percent(0.99996), '99.99')
+        self.assertEqual(segmentation.percent(199_999 / 200_000), '99.99')
+
+    def test_values_that_round_below_100_are_unchanged(self):
+        self.assertEqual(segmentation.percent(0.99994), '99.99')
+        self.assertEqual(segmentation.percent(0.9996), '99.96')
+
+
 class SeriesTest(unittest.TestCase):
     def test_every_series_has_a_display_name_and_a_language(self):
         stats = segmentation.load_stats()
