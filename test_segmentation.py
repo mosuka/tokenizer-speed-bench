@@ -321,12 +321,13 @@ class GoldColumnsTest(unittest.TestCase):
 
     def test_japanese(self):
         self.assertEqual(self.titles('ja-pud'), [
-            'F1, short units [%]', 'Cuts at short-unit boundaries [%]', 'F1, long units [%]',
-            'Long-unit boundaries kept [%]', 'Bunsetsu boundaries kept [%]'])
+            'F1, short units [%]', 'Boundary precision (short units) [%]', 'F1, long units [%]',
+            'Boundary recall (long units) [%]', 'Boundary recall (bunsetsu) [%]'])
 
     def test_korean(self):
         self.assertEqual(self.titles('ko-kaist'), [
-            'F1, morphemes [%]', 'Cuts at morpheme boundaries [%]', 'F1, eojeols [%]', 'Eojeol boundaries kept [%]'])
+            'F1, morphemes [%]', 'Boundary precision (morphemes) [%]', 'F1, eojeols [%]',
+            'Boundary recall (eojeols) [%]'])
 
     def test_english_and_chinese(self):
         self.assertEqual(self.titles('en-pud'), ['Precision [%]', 'Recall [%]', 'F1 [%]', 'F1, tokens [%]'])

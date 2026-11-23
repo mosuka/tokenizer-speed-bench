@@ -19,9 +19,9 @@ control character are dropped from both sides first, as Lucene's kuromoji
 and nori drop them, so that rows that discard punctuation can be compared
 with rows that keep it. For the layers of Japanese and Korean, which run
 from fine to coarse, a row's cut (an edge of a scored token inside the
-line) counts as right when it is a boundary of the finest layer, and a
-boundary of a coarser layer counts as kept when no scored token crosses
-it.
+line) counts as right when it is a boundary of the finest layer (boundary
+precision), and a boundary of a coarser layer counts as kept when no scored
+token crosses it (boundary recall).
 
 Usage (from the repository root):
   segmentation.py text <gold dir> <output dir>
@@ -368,14 +368,14 @@ class GoldSet:
     Without hierarchy, the first layer is given with precision, recall and
     F1, and the other layers with F1. With hierarchy, the layers run from
     fine to coarse, and each is given with its unit F1 and, for the finest
-    layer, the share of the row's cuts that are its boundaries (low when the
-    row splits inside its units) or, for a coarser layer, the share of its
-    boundaries that the row keeps (low when the row joins its units). With
-    bunsetsu, the share of bunsetsu boundaries kept is given last.
+    layer, the boundary precision (the share of the row's cuts that are its
+    boundaries: low when the row splits inside its units) or, for a coarser
+    layer, the boundary recall (the share of its boundaries that no token of
+    the row crosses: low when the row joins its units). With bunsetsu, the
+    boundary recall of bunsetsu is given last.
 
-    names maps a layer to its plural and attributive names in the columns
-    ("long units", "long-unit"); the first layer needs one only with
-    hierarchy.
+    names maps a layer to its name in the columns ("long units"); the first
+    layer needs one only with hierarchy.
     """
 
     key: str
@@ -393,15 +393,15 @@ class GoldSet:
 GOLD_SETS = [
     GoldSet('ja-pud', 'Japanese, UD_Japanese-PUD r2.19 (short units, long units, bunsetsu)', 'ja',
             'ja_pud-ud-test.conllu', layers=('word', 'luw'),
-            names={'word': ('short units', 'short-unit'), 'luw': ('long units', 'long-unit')},
+            names={'word': 'short units', 'luw': 'long units'},
             hierarchy=True, bunsetsu=True, merge_numbers=True),
     GoldSet('ko-kaist', 'Korean, UD_Korean-Kaist r2.19 test (morphemes, eojeols)', 'ko',
             'ko_kaist-ud-test.conllu', layers=('morpheme', 'word'),
-            names={'morpheme': ('morphemes', 'morpheme'), 'word': ('eojeols', 'eojeol')},
+            names={'morpheme': 'morphemes', 'word': 'eojeols'},
             hierarchy=True, morphemes=True),
     GoldSet('zh-pud', 'Chinese, UD_Chinese-PUD r2.19 (traditional)', 'zh', 'zh_pud-ud-test.conllu'),
     GoldSet('en-pud', 'English, UD_English-PUD r2.19', 'en', 'en_pud-ud-test.conllu', layers=('word', 'token'),
-            names={'token': ('tokens', 'token')}),
+            names={'token': 'tokens'}),
 ]
 
 TEXT_FILES = {
@@ -593,19 +593,17 @@ def gold_columns(gold: GoldSet, scores: GoldScores) -> list[tuple[str, float]]:
     """The (column title, share) pairs of one row of a gold set's table."""
     first = gold.layers[0]
     if gold.hierarchy:
-        plural, attributive = gold.names[first]
-        columns = [(f'F1, {plural} [%]', scores.units[first].f1()),
-                   (f'Cuts at {attributive} boundaries [%]', scores.cuts.share())]
+        columns = [(f'F1, {gold.names[first]} [%]', scores.units[first].f1()),
+                   (f'Boundary precision ({gold.names[first]}) [%]', scores.cuts.share())]
         for layer in gold.layers[1:]:
-            plural, attributive = gold.names[layer]
-            columns += [(f'F1, {plural} [%]', scores.units[layer].f1()),
-                        (f'{attributive.capitalize()} boundaries kept [%]', scores.kept[layer].share())]
+            columns += [(f'F1, {gold.names[layer]} [%]', scores.units[layer].f1()),
+                        (f'Boundary recall ({gold.names[layer]}) [%]', scores.kept[layer].share())]
     else:
         counts = scores.units[first]
         columns = [('Precision [%]', counts.precision()), ('Recall [%]', counts.recall()), ('F1 [%]', counts.f1())]
-        columns += [(f'F1, {gold.names[layer][0]} [%]', scores.units[layer].f1()) for layer in gold.layers[1:]]
+        columns += [(f'F1, {gold.names[layer]} [%]', scores.units[layer].f1()) for layer in gold.layers[1:]]
     if gold.bunsetsu:
-        columns.append(('Bunsetsu boundaries kept [%]', scores.kept['bunsetsu'].share()))
+        columns.append(('Boundary recall (bunsetsu) [%]', scores.kept['bunsetsu'].share()))
     return columns
 
 
