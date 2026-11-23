@@ -1,6 +1,8 @@
 package sudachi_bench;
 
 import java.io.IOException;
+import java.io.BufferedWriter;
+import java.nio.charset.StandardCharsets;
 import com.worksap.nlp.sudachi.Tokenizer;
 import com.worksap.nlp.sudachi.Dictionary;
 import com.worksap.nlp.sudachi.DictionaryFactory;
@@ -33,6 +35,27 @@ public class App {
             double timeElapsed = (double) Duration.between(start, finish).toNanos() / 1000000000;
             System.out.println("Elapsed-sudachi: " + timeElapsed + " [sec]");
             System.out.println(n_words);
+
+            // With BENCH_TOKENS=<file>, write the tokens of every line after
+            // the timed loop, one per line with an empty line after each input
+            // line, for segmentation.py. The timed loop above is unchanged.
+            String path = System.getenv("BENCH_TOKENS");
+            if (path != null) {
+                try (BufferedWriter out = Files.newBufferedWriter(Paths.get(path), StandardCharsets.UTF_8)) {
+                    for (String line : lines) {
+                        // Sudachi can give a morpheme an empty surface (inside
+                        // "……", for example); it covers no text, and an empty
+                        // line would end the line's tokens, so it is not written.
+                        for (Morpheme morpheme : tokenizer.tokenize(Tokenizer.SplitMode.C, line)) {
+                            if (!morpheme.surface().isEmpty()) {
+                                out.write(morpheme.surface());
+                                out.write('\n');
+                            }
+                        }
+                        out.write('\n');
+                    }
+                }
+            }
         }
     }
 }

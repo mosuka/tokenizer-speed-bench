@@ -1,4 +1,5 @@
 use std::io::BufRead;
+use std::io::Write;
 
 use alyze::cjk::smartcn::{self, Options};
 
@@ -25,4 +26,18 @@ fn main() {
 
     println!("Elapsed-alyze-smartcn: {} [sec]", duration.as_secs_f64());
     dbg!(n_words);
+
+    // With BENCH_TOKENS=<file>, write the tokens of every line after the timed
+    // loop, one per line with an empty line after each input line, for
+    // segmentation.py. The timed loop above is unchanged.
+    if let Ok(path) = std::env::var("BENCH_TOKENS") {
+        let mut out = std::io::BufWriter::new(std::fs::File::create(path).unwrap());
+        for line in &lines {
+            smartcn::tokenize(line, Options::default(), &mut buffer, |token| {
+                writeln!(out, "{}", &line[token.byte_range.clone()]).unwrap();
+                true
+            });
+            writeln!(out).unwrap();
+        }
+    }
 }

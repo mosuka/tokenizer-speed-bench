@@ -1,7 +1,9 @@
 #include <mecab.h>
 
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -25,6 +27,23 @@ int main(int argc, const char **argv) {
     const auto d = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
     std::cout << "Elapsed-mecab-unidic-202512: " << static_cast<double>(d) / 1000000 << " [sec]"
               << std::endl;
+
+    // With BENCH_TOKENS=<file>, write the tokens of every line after the timed
+    // loop, one per line with an empty line after each input line, for
+    // segmentation.py. The timed loop above is unchanged.
+    if (const char *path = std::getenv("BENCH_TOKENS")) {
+        std::ofstream out(path);
+        for (std::string &line : lines) {
+            std::strcpy(buf.data(), line.c_str());
+            for (const Node *node = tagger->parseToNode(buf.data()); node; node = node->next) {
+                if (node->stat == MECAB_BOS_NODE || node->stat == MECAB_EOS_NODE) {
+                    continue;
+                }
+                out << std::string(node->surface, node->length) << '\n';
+            }
+            out << '\n';
+        }
+    }
 
     return 0;
 }

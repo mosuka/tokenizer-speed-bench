@@ -4,6 +4,9 @@ Cargo.lock
 target
 
 results
+accuracy
+/tokens/
+__pycache__/
 a.out
 classpath.txt
 

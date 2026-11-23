@@ -3,6 +3,8 @@
 #include <kytea/string-util.h>
 
 #include <chrono>
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -38,6 +40,22 @@ int main(int argc, const char **argv) {
         << static_cast<double>(d) / 1000000
         << " [sec]" << std::endl;
     std::cerr << n_words << std::endl;
+
+    // With BENCH_TOKENS=<file>, write the tokens of every line after the timed
+    // loop, one per line with an empty line after each input line, for
+    // segmentation.py. The timed loop above is unchanged.
+    if (const char *path = std::getenv("BENCH_TOKENS")) {
+        std::ofstream out(path);
+        for (const std::string &line : lines) {
+            const KyteaString surface_string = util->mapString(line);
+            KyteaSentence sentence(surface_string, surface_string);
+            kytea->calculateWS(sentence);
+            for (const KyteaWord &word : sentence.words) {
+                out << util->showString(word.surface) << '\n';
+            }
+            out << '\n';
+        }
+    }
 
     return 0;
 }
