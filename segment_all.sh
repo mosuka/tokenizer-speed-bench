@@ -19,20 +19,12 @@ python3 -B ./segmentation.py text "$GOLD" "$TOKENS/text"
 # The speed corpora, for the agreement with the reference implementations.
 SEGMENT_DIR="$TOKENS/corpus" ./run_all.sh >&2
 
-# The parallel UD treebanks, one per language.
-SEGMENT_DIR="$TOKENS/pud" \
+# The UD gold data, one set per language.
+SEGMENT_DIR="$TOKENS/ud" \
     INPUT_DATA="$TOKENS/text/ja_pud.txt" \
-    INPUT_DATA_KO="$TOKENS/text/ko_pud.txt" \
+    INPUT_DATA_KO="$TOKENS/text/ko_kaist.txt" \
     INPUT_DATA_ZH="$TOKENS/text/zh_pud.txt" \
     INPUT_DATA_EN="$TOKENS/text/en_pud.txt" \
-    ./run_all.sh >&2
-
-# KLUE-DP dev, for the Korean series; the other series get no input.
-SEGMENT_DIR="$TOKENS/klue" \
-    INPUT_DATA=/dev/null \
-    INPUT_DATA_KO="$TOKENS/text/klue_dp_dev.txt" \
-    INPUT_DATA_ZH=/dev/null \
-    INPUT_DATA_EN=/dev/null \
     ./run_all.sh >&2
 
 python3 -B ./segmentation.py report "$GOLD" "$TOKENS"

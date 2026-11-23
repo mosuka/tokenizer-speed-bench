@@ -286,7 +286,10 @@ GNU time（`/usr/bin/time -v`）で各反復をラップして計測したベン
 書き出します。`lindera` の `ipadic` は、`mecab` が読む IPADIC と同じ版の後の
 アーカイブ（`mecab-ipadic-2.7.0-20250920`。`mecab` は 2.7.0-20070801）から
 作られています。vibrato のリリースノートによると、`ipadic-mecab-2.7.0` は
-IPADIC v2.7.0 から作られています。
+IPADIC v2.7.0 から作られています。`lindera` の `sudachidict` は `sudachi` と
+比べません。`lindera` の `sudachidict` は small・core・notcore の語彙を持つ
+SudachiDict 20260723 で、Sudachi の分割モードを使わずに分割します。一方
+`sudachi` は 20261015 の core の辞書を読み、C モードで分割します。
 
 #### IPADIC（参照: mecab、ipadic 2.7.0）
 
@@ -332,111 +335,148 @@ IPADIC v2.7.0 から作られています。
 | --- | --- | ---: | ---: |
 | vaporetto | kytea jp-0.4.7-5.mod | 99.96 | 2,346 行中 47 行 |
 
-### 正解のデータとの比較
+### Universal Dependencies との比較
 
-正解のデータは、Universal Dependencies の並行 treebank である
+正解のデータは、[Universal Dependencies](https://universaldependencies.org/)
+（UD）の r2.19 の treebank です。並行 treebank の
 [UD_Japanese-PUD](https://github.com/UniversalDependencies/UD_Japanese-PUD)、
-[UD_Korean-PUD](https://github.com/UniversalDependencies/UD_Korean-PUD)、
 [UD_Chinese-PUD](https://github.com/UniversalDependencies/UD_Chinese-PUD)、
 [UD_English-PUD](https://github.com/UniversalDependencies/UD_English-PUD) の
-評価用データ（r2.19、各 1,000 文、CC BY-SA 3.0）と、韓国語の形態素については
-[KLUE-DP](https://github.com/KLUE-benchmark/KLUE) の dev（v1.1.0、2,000 文、
-CC BY-SA 4.0）です。`./download_resources.sh` が取得し、このリポジトリには
-含めていません。どれも、litsea のモデル（UD Japanese-GSD、Korean-GSD、
-Chinese-GSD、English-EWT で学習）と、lindera の jieba の辞書（UD Chinese-GSD と
-GSDSimp で学習）の学習データには含まれていません。
+評価用データ（各 1,000 文、ニュースと Wikipedia の文、CC BY-SA 3.0）と、
+[UD_Korean-Kaist](https://github.com/UniversalDependencies/UD_Korean-Kaist) の
+評価用データ（ニュース・小説・学術の 2,287 文、CC BY-SA 4.0）を使います。
+`./download_resources.sh` が取得し、このリポジトリには含めていません。どれも、
+litsea のモデル（UD Japanese-GSD、Korean-GSD、Chinese-GSD、English-EWT で学習）と、
+lindera の jieba の辞書（UD Chinese-GSD と GSDSimp で学習）の学習データには
+含まれていません。
 
-すべての行をその言語の正解のデータで採点し、「基準」の列で、その行が正解の
-データの基準で分割しているかを示します。「違う」の行の点数は、その行の単位が
-正解のデータの基準からどれだけ離れているかを表すもので、精度ではありません。
+UD の単位は統語上の語で、語の分け方の細部は言語ごとの文書に任せています（UD の
+[分割の指針](https://universaldependencies.org/u/overview/tokenization.html)）。
+すべての行を、その言語の UD のデータが持つ層で採点し、分割の基準が違う行どうしも
+同じデータで読めるようにします。日本語（短単位・長単位・文節）と韓国語（形態素・
+語節）の層は細かい順に並び、ある層の単位は、より細かい層の単位を丸ごと組み
+合わせたものです。各層を次の 2 通りで採点します。
 
-* 日本語: 正解のデータは UniDic の短単位で、数詞を 1 語にまとめています。
-  そのため採点の前に、数字だけのトークンが続くところを両側で 1 語にまとめます。
-  UniDic の行と litsea は短単位に従います。`kytea` と `vaporetto`（同じ KyTea の
-  モデル）は、さらに活用語の語幹と語尾を分けるので「近い」としています。
-  IPADIC の行と `rust-tinysegmenter` は IPADIC の単位、Sudachi の行は C モード
-  （固有表現の単位）、`lindera` の `sudachidict` は Sudachi の分割モードを持たない
-  SudachiDict の語彙で分割するので「違う」としています。
-* 韓国語: UD_Korean-PUD は語節（空白で区切られた単位）で、litsea は語節を
-  出力し、ほかの行は形態素を出力します。KLUE-DP の形態素は、韓国語学の研究者が
-  TTA の指針に従って付けたもので、mecab-ko-dic の形態素に近いものの、基本形で
-  書かれています。形態素をつなげても元の語節に戻らない語節（된 = 되 + ㄴ）は
-  両側で除くので、22,496 語節のうち 82.0 % を採点しています。KLUE-DP の文は、
-  語節を空白でつないだものです。
-* 中国語: UD_Chinese-PUD は繁体字です。litsea と `lindera` の `jieba` は、
-  PUD と同じく Google が注釈を付けた UD Chinese-GSD で学習しています。CC-CEDICT
-  は分割の基準を持たない語の一覧で、smartcn は簡体字専用です。
-* 英語: 正解のデータは、縮約を語に分けます（do + n't）。「F 値」の列はこの語で、
-  「F 値（トークン）」の列は分ける前のトークン（don't）で採点します。後者は
-  UAX #29 の分け方です。
+* 単位の F 値: その行がその層の基準にどれだけ従っているか。違う基準で分割する
+  行は、その層の点数が低くなります。どの行がどの基準で分割するかは、下の注記に
+  書きます。
+* 最も細かい層の「区切りで切った割合」は、その行の区切り（文の中にあるトークンの
+  端）のうち、その層の区切りでもあるものの割合です。その層の単位の中を切ると
+  下がります。それより粗い層の「保った区切り」は、その層の区切りのうち、その行の
+  どのトークンにもまたがれていないものの割合です。その層の単位をまたいでまとめると
+  下がります。
 
-#### 日本語、UD_Japanese-PUD r2.19（UniDic の短単位）
+区切りがすべて短単位の区切りで、長単位の区切りをすべて保つ行は、基準が何であれ、
+短単位と長単位の間の細かさで分割しています。粗い層の「区切りで切った割合」と、
+文節の F 値は載せません。どの行もこれらの層より細かく切るので、これらの値は
+誤りではなく、どこまで細かく切るかを表すだけだからです。層が 1 つの中国語と、
+語とトークンを持つ英語は、UD の語の適合率・再現率・F 値で示します。行は最初の層の
+F 値の高い順に並べます。
 
-| トークナイザ | 辞書・モデル | 基準 | 適合率 [%] | 再現率 [%] | F 値 [%] |
-| --- | --- | --- | ---: | ---: | ---: |
-| vibrato | unidic-cwj-3.1.1 | 同じ | 98.57 | 99.03 | 98.80 |
-| vibrato | unidic-cwj-3.1.1+compact-dual | 同じ | 98.55 | 99.00 | 98.77 |
-| mecab | unidic-cwj-3.1.1 | 同じ | 98.50 | 99.01 | 98.75 |
-| mecab | unidic-cwj-202512 | 同じ | 97.95 | 98.98 | 98.46 |
-| lindera | unidic-cwj | 同じ | 97.95 | 98.98 | 98.46 |
-| lindera | unidic | 同じ | 97.78 | 98.94 | 98.36 |
-| lindera | unidic-csj | 同じ | 97.70 | 98.76 | 98.23 |
-| litsea (japanese) | japanese.model | 同じ | 97.51 | 97.64 | 97.57 |
-| litsea (japanese, two-stage) | japanese_pos.model | 同じ | 97.42 | 97.60 | 97.51 |
-| vaporetto | kytea jp-0.4.7-5.mod | 近い | 81.02 | 89.09 | 84.87 |
-| kytea | jp-0.4.7-5.mod | 近い | 81.00 | 89.09 | 84.85 |
-| sudachi.rs | sudachi-dictionary-20261015-core | 違う | 96.28 | 93.12 | 94.68 |
-| sudachi | sudachi-dictionary-20261015-core | 違う | 96.11 | 92.77 | 94.41 |
-| lindera | ipadic | 違う | 94.99 | 91.88 | 93.41 |
-| kuromoji (Lucene) | ipadic (bundled) | 違う | 94.94 | 91.87 | 93.38 |
-| alyze (kuromoji) | ipadic (embedded) | 違う | 94.94 | 91.87 | 93.38 |
-| mecab | ipadic 2.7.0 | 違う | 94.61 | 91.05 | 92.80 |
-| vibrato | ipadic-mecab-2.7.0 | 違う | 94.61 | 91.05 | 92.80 |
-| kuromoji (Atilika) | ipadic (bundled) | 違う | 94.48 | 90.91 | 92.66 |
-| lindera | sudachidict | 違う | 94.26 | 90.02 | 92.09 |
-| rust-tinysegmenter | - | 違う | 92.11 | 89.24 | 90.66 |
+* 日本語: UD の日本語は、現代日本語書き言葉均衡コーパス（BCCWJ）と同じく、
+  短単位・長単位・文節の 3 つの層で分割されています
+  （[UD_Japanese-GSD の README](https://github.com/UniversalDependencies/UD_Japanese-GSD/blob/r2.19/README.md)）。
+  * UD の語は短単位で、数詞を 1 語にまとめています。そのため採点の前に、数字
+    だけのトークンが続くところを両側で 1 語にまとめます。UniDic の行と litsea は
+    短単位に従います。`kytea` と `vaporetto`（同じ KyTea のモデル）は、さらに
+    活用語の語幹と語尾を分けます。IPADIC の行と `rust-tinysegmenter` は IPADIC の
+    単位、Sudachi の行は C モード（固有表現の単位）、`lindera` の `sudachidict` は
+    Sudachi の分割モードを持たない SudachiDict の語彙で分割します。
+  * 長単位は、各語の MISC の `LUWBILabel` から組み立てます。組み立てた長単位は、
+    同じ文の長単位版である
+    [UD_Japanese-PUDLUW](https://github.com/UniversalDependencies/UD_Japanese-PUDLUW)
+    の語と一致します。長単位に従う行はありません。
+  * 文節の区切り（MISC の `BunsetuBILabel`）は、どれも長単位と短単位の区切りでも
+    あります。除くトークンはどの区切りもまたがず、区切りは採点するトークンの
+    ものだけを数えます。
+  * `kytea`、`vaporetto`、`rust-tinysegmenter` 以外の行は、区切りの 98.7 % 以上が
+    短単位の区切りです。また、どの行も長単位の区切りの 98.8 % 以上と、8,972 個の
+    文節の区切りの 98.7 % 以上を保ちます。IPADIC と Sudachi の行の短単位の点数が
+    低いのは、単位が長いためで、間違った所で切るためではありません。`kytea` と
+    `vaporetto` は短単位の中を切り（い / る）、`rust-tinysegmenter` は両方で
+    下がります。文節をまたぐトークンの多くは、2 つの文節の語をつなげた IPADIC の
+    連語の項目（役に立つ、として）と、`lindera` の `sudachidict` の固有表現や
+    慣用句（法の支配、トロイの木馬）です。
+  * `lindera` の `ipadic` が `mecab` より高いのは、lindera 7.0.0 が未知語を `・` で
+    区切り、正解のデータもカタカナの名前をそこで分ける（コリ・シューマン）ためです。
+    MeCab は、IPADIC の `char.def` が `・` をカタカナの分類に入れているので、
+    そうした名前を 1 つの未知語にします。`lindera` と `vibrato` の分割が違う
+    106 か所のうち 104 か所が、そうした名前です。
+* 韓国語: UD_Korean-Kaist の語は、句読点を切り離した語節（空白で区切られた
+  単位）で、litsea は語節を出力し、ほかの行は形態素を出力します。形態素は、各語の
+  見出し語を `+` で分けたものです（조약에 = 조약+에）。形態素は基本形で書かれて
+  いるので、つなげても元の語に戻らない語（의해 = 의하+어）は、形態素の採点から
+  両側で除きます。採点するのは 28,366 語のうち 23,517 語（82.9 %）で、除く語の
+  中の区切りは数えません。mecab-ko-dic の行は区切りの 97.6 %、litsea はすべてが
+  形態素の区切りで、どの行も語節の区切りをすべて保ちます。文は PUD の文とは別の
+  ものです。UD_Korean-PUD は使いません。指定詞や一部の語尾・
+  複合名詞を語節から分けるので（수준이지만 = 수준 + 이지만）、句読点でない語の
+  うち語節と一致するのは 69.4 % だけで、残りも形態素ではありません。
+* 中国語: UD_Chinese-PUD は繁体字で、Google が注釈を付けました。UD の
+  [中国語の分割の文書](https://universaldependencies.org/zh/tokenization.html)
+  には、この treebank の分割の基準の説明がありません。litsea と `lindera` の
+  `jieba` は、同じく Google が注釈を付けた UD Chinese-GSD で学習しています。
+  CC-CEDICT は分割の基準を持たない語の一覧で、smartcn は簡体字専用です。
+* 英語: UD の[英語の文書](https://universaldependencies.org/en/index.html)は、
+  縮約（do + n't、's）と、ハイフンでつないだ語の多く（search、-、engine）を
+  語に分け、略語（U.S.）は分けません。「F 値」の列はこの語で、「F 値（トークン）」
+  の列は分ける前のトークン（don't）で採点します。後者は UAX #29 の分け方です。
 
-#### 韓国語、UD_Korean-PUD r2.19（語節）
+#### 日本語、UD_Japanese-PUD r2.19（短単位、長単位、文節）
 
-| トークナイザ | 辞書・モデル | 基準 | 適合率 [%] | 再現率 [%] | F 値 [%] |
-| --- | --- | --- | ---: | ---: | ---: |
-| litsea (korean, two-stage) | korean_pos.model | 同じ | 82.50 | 69.28 | 75.32 |
-| litsea (korean) | korean.model | 同じ | 82.50 | 69.28 | 75.31 |
-| mecab-ko | mecab-ko-dic 2.1.1-20180720 | 違う | 25.90 | 43.32 | 32.42 |
-| lindera | ko-dic | 違う | 25.90 | 43.32 | 32.42 |
-| nori (Lucene) | mecab-ko-dic (bundled) | 違う | 25.89 | 43.32 | 32.41 |
-| alyze (nori) | mecab-ko-dic (embedded) | 違う | 25.89 | 43.32 | 32.41 |
-| mecab | mecab-ko-dic 2.1.1-20180720 | 違う | 25.83 | 43.26 | 32.35 |
+| トークナイザ | 辞書・モデル | F 値（短単位） [%] | 短単位の区切りで切った割合 [%] | F 値（長単位） [%] | 保った長単位の区切り [%] | 保った文節の区切り [%] |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| vibrato | unidic-cwj-3.1.1 | 98.80 | 99.33 | 67.39 | 99.97 | 99.97 |
+| vibrato | unidic-cwj-3.1.1+compact-dual | 98.77 | 99.32 | 67.40 | 99.97 | 99.97 |
+| mecab | unidic-cwj-3.1.1 | 98.75 | 99.29 | 67.37 | 99.97 | 99.97 |
+| mecab | unidic-cwj-202512 | 98.46 | 98.86 | 67.02 | 99.98 | 99.97 |
+| lindera | unidic-cwj | 98.46 | 98.86 | 67.02 | 99.98 | 99.97 |
+| lindera | unidic | 98.36 | 98.78 | 66.79 | 99.98 | 99.98 |
+| lindera | unidic-csj | 98.23 | 98.77 | 66.91 | 99.96 | 99.97 |
+| litsea (japanese) | japanese.model | 97.57 | 99.00 | 67.17 | 99.75 | 99.71 |
+| litsea (japanese, two-stage) | japanese_pos.model | 97.51 | 98.95 | 67.12 | 99.76 | 99.71 |
+| sudachi.rs | sudachi-dictionary-20261015-core | 94.68 | 99.81 | 71.50 | 99.91 | 99.94 |
+| sudachi | sudachi-dictionary-20261015-core | 94.41 | 99.81 | 71.59 | 99.93 | 99.94 |
+| lindera | ipadic | 93.41 | 99.15 | 70.18 | 99.42 | 99.45 |
+| kuromoji (Lucene) | ipadic (bundled) | 93.38 | 99.12 | 70.15 | 99.42 | 99.45 |
+| alyze (kuromoji) | ipadic (embedded) | 93.38 | 99.12 | 70.15 | 99.42 | 99.45 |
+| mecab | ipadic 2.7.0 | 92.80 | 99.19 | 70.70 | 99.42 | 99.45 |
+| vibrato | ipadic-mecab-2.7.0 | 92.80 | 99.19 | 70.70 | 99.42 | 99.45 |
+| kuromoji (Atilika) | ipadic (bundled) | 92.66 | 99.15 | 70.70 | 99.42 | 99.44 |
+| lindera | sudachidict | 92.09 | 99.49 | 72.84 | 99.80 | 99.78 |
+| rust-tinysegmenter | - | 90.66 | 97.99 | 68.55 | 98.87 | 98.74 |
+| vaporetto | kytea jp-0.4.7-5.mod | 84.87 | 91.23 | 57.27 | 99.93 | 99.89 |
+| kytea | jp-0.4.7-5.mod | 84.85 | 91.21 | 57.27 | 99.95 | 99.92 |
 
-#### 韓国語、KLUE-DP v1.1 dev（形態素）
+#### 韓国語、UD_Korean-Kaist r2.19 test（形態素、語節）
 
-| トークナイザ | 辞書・モデル | 基準 | 適合率 [%] | 再現率 [%] | F 値 [%] |
-| --- | --- | --- | ---: | ---: | ---: |
-| mecab-ko | mecab-ko-dic 2.1.1-20180720 | 近い | 91.91 | 93.08 | 92.49 |
-| lindera | ko-dic | 近い | 91.91 | 93.08 | 92.49 |
-| nori (Lucene) | mecab-ko-dic (bundled) | 近い | 91.90 | 93.09 | 92.49 |
-| alyze (nori) | mecab-ko-dic (embedded) | 近い | 91.90 | 93.09 | 92.49 |
-| mecab | mecab-ko-dic 2.1.1-20180720 | 近い | 91.67 | 92.91 | 92.29 |
-| litsea (korean, two-stage) | korean_pos.model | 違う | 35.54 | 19.12 | 24.86 |
-| litsea (korean) | korean.model | 違う | 35.51 | 19.10 | 24.84 |
+| トークナイザ | 辞書・モデル | F 値（形態素） [%] | 形態素の区切りで切った割合 [%] | F 値（語節） [%] | 保った語節の区切り [%] |
+| --- | --- | ---: | ---: | ---: | ---: |
+| nori (Lucene) | mecab-ko-dic (bundled) | 92.80 | 97.61 | 18.25 | 100.00 |
+| alyze (nori) | mecab-ko-dic (embedded) | 92.80 | 97.61 | 18.25 | 100.00 |
+| mecab-ko | mecab-ko-dic 2.1.1-20180720 | 92.79 | 97.61 | 18.24 | 100.00 |
+| lindera | ko-dic | 92.79 | 97.61 | 18.24 | 100.00 |
+| mecab | mecab-ko-dic 2.1.1-20180720 | 92.71 | 97.58 | 18.24 | 100.00 |
+| litsea (korean) | korean.model | 18.15 | 100.00 | 99.99 | 100.00 |
+| litsea (korean, two-stage) | korean_pos.model | 18.15 | 100.00 | 99.99 | 100.00 |
 
 #### 中国語、UD_Chinese-PUD r2.19（繁体字）
 
-| トークナイザ | 辞書・モデル | 基準 | 適合率 [%] | 再現率 [%] | F 値 [%] |
-| --- | --- | --- | ---: | ---: | ---: |
-| litsea (chinese) | chinese.model | 同じ | 85.22 | 88.00 | 86.59 |
-| litsea (chinese, two-stage) | chinese_pos.model | 同じ | 85.03 | 88.08 | 86.52 |
-| lindera | jieba | 同じ | 82.53 | 88.80 | 85.55 |
-| lindera | cc-cedict | 違う | 79.37 | 81.69 | 80.51 |
-| alyze (smartcn) | smartcn (embedded) | 違う | 43.29 | 61.47 | 50.80 |
+| トークナイザ | 辞書・モデル | 適合率 [%] | 再現率 [%] | F 値 [%] |
+| --- | --- | ---: | ---: | ---: |
+| litsea (chinese) | chinese.model | 85.22 | 88.00 | 86.59 |
+| litsea (chinese, two-stage) | chinese_pos.model | 85.03 | 88.08 | 86.52 |
+| lindera | jieba | 82.53 | 88.80 | 85.55 |
+| lindera | cc-cedict | 79.37 | 81.69 | 80.51 |
+| alyze (smartcn) | smartcn (embedded) | 43.29 | 61.47 | 50.80 |
 
 #### 英語、UD_English-PUD r2.19
 
-| トークナイザ | 辞書・モデル | 基準 | 適合率 [%] | 再現率 [%] | F 値 [%] | F 値（トークン） [%] |
-| --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (english, two-stage) | english_pos.model | 同じ | 99.71 | 99.73 | 99.72 | 98.98 |
-| litsea (english) | english.model | 同じ | 99.62 | 99.64 | 99.63 | 98.89 |
-| alyze (UAX #29) | - | 違う | 98.70 | 98.66 | 98.68 | 99.34 |
+| トークナイザ | 辞書・モデル | 適合率 [%] | 再現率 [%] | F 値 [%] | F 値（トークン） [%] |
+| --- | --- | ---: | ---: | ---: | ---: |
+| litsea (english, two-stage) | english_pos.model | 99.71 | 99.73 | 99.72 | 98.98 |
+| litsea (english) | english.model | 99.62 | 99.64 | 99.63 | 98.89 |
+| alyze (UAX #29) | - | 98.70 | 98.66 | 98.68 | 99.34 |
 
 ## ライセンス
 
