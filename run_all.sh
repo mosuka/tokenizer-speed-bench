@@ -33,10 +33,27 @@ measure_rss() {
 # rough run, e.g. `ITERATIONS=10 ./run_all.sh`.
 ITERATIONS="${ITERATIONS:-100}"
 
-INPUT_DATA="./resources/wagahaiwa_nekodearu.txt"
-INPUT_DATA_KO="./resources/mujeong.txt"
-INPUT_DATA_ZH="./resources/rulin_waishi.txt"
-INPUT_DATA_EN="./resources/pride_and_prejudice.txt"
+# The input of each language. segment_all.sh points them at gold sentences;
+# they must be absolute paths, since the Java benches run in their own
+# directories.
+INPUT_DATA="${INPUT_DATA:-$PWD/resources/wagahaiwa_nekodearu.txt}"
+INPUT_DATA_KO="${INPUT_DATA_KO:-$PWD/resources/mujeong.txt}"
+INPUT_DATA_ZH="${INPUT_DATA_ZH:-$PWD/resources/rulin_waishi.txt}"
+INPUT_DATA_EN="${INPUT_DATA_EN:-$PWD/resources/pride_and_prejudice.txt}"
+
+# With SEGMENT_DIR=<dir>, the series are not timed: each runs once with
+# BENCH_TOKENS=<dir>/<series>.txt, which makes the bench write its
+# segmentation for segmentation.py (see segment_all.sh).
+if [ -n "${SEGMENT_DIR:-}" ]; then
+    mkdir -p "$SEGMENT_DIR"
+    SEGMENT_DIR=$(cd "$SEGMENT_DIR" && pwd)
+    measure_rss() {
+        local name="$1"
+        shift
+        BENCH_TOKENS="$SEGMENT_DIR/$name.txt" "$@" > /dev/null
+    }
+    ITERATIONS=0
+fi
 
 # iter=0 is a warm-up to avoid unfair results due to lazy loading.
 for i in $(seq 0 "$ITERATIONS")
@@ -58,15 +75,15 @@ do
     LD_LIBRARY_PATH=$PWD/thirdparty/mecab-ko/tmpusr/lib measure_rss "mecab-ko-ko-dic-2_1_1" ./bench/mecab-ko-ko-dic-2_1_1-bench/a.out < $INPUT_DATA_KO
 
     pushd ./bench/kuromoji-bench
-    measure_rss "kuromoji" java -cp "target/classes:$(cat classpath.txt)" kuromoji_bench.App < ../../$INPUT_DATA
+    measure_rss "kuromoji" java -cp "target/classes:$(cat classpath.txt)" kuromoji_bench.App < $INPUT_DATA
     popd
 
     pushd ./bench/lucene-kuromoji-bench
-    measure_rss "lucene-kuromoji" java -cp "target/classes:$(cat classpath.txt)" lucene_kuromoji_bench.App < ../../$INPUT_DATA
+    measure_rss "lucene-kuromoji" java -cp "target/classes:$(cat classpath.txt)" lucene_kuromoji_bench.App < $INPUT_DATA
     popd
 
     pushd ./bench/lucene-nori-bench
-    measure_rss "lucene-nori" java -cp "target/classes:$(cat classpath.txt)" lucene_nori_bench.App < ../../$INPUT_DATA_KO
+    measure_rss "lucene-nori" java -cp "target/classes:$(cat classpath.txt)" lucene_nori_bench.App < $INPUT_DATA_KO
     popd
 
     measure_rss "lindera-ipadic" ./bench/lindera-ipadic-bench/target/release/lindera-ipadic-bench < $INPUT_DATA
@@ -86,7 +103,7 @@ do
     measure_rss "lindera-ko-dic" ./bench/lindera-ko-dic-bench/target/release/lindera-ko-dic-bench < $INPUT_DATA_KO
 
     pushd ./bench/sudachi-bench
-    measure_rss "sudachi" java -cp "target/classes:$(cat classpath.txt)" sudachi_bench.App < ../../$INPUT_DATA
+    measure_rss "sudachi" java -cp "target/classes:$(cat classpath.txt)" sudachi_bench.App < $INPUT_DATA
     popd
 
     measure_rss "sudachi.rs" ./bench/sudachirs-bench/target/release/sudachirs-bench < $INPUT_DATA

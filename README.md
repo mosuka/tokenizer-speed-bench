@@ -56,6 +56,15 @@ iterations. Set `ITERATIONS` to measure fewer iterations for a rough comparison.
 % ITERATIONS=10 ./run_all.sh | tee ./results
 ```
 
+To measure how each tokenizer segments (see
+[Segmentation accuracy](#segmentation-accuracy)), run the following command.
+It runs every tokenizer once on the corpora above and on the gold-standard
+data that `./download_resources.sh` fetches, and prints the tables.
+
+```sh
+% ./segment_all.sh | tee ./accuracy
+```
+
 ## Results
 
 Measured 2026-11-23 on the following environment.
@@ -195,63 +204,245 @@ behavior. Compare this column across rows with these differences in mind.
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| vaporetto | 0.7.0 | kytea jp-0.4.7-5.mod | 80.6 MB | 24,841,134 | 1,213,976 | 188.7 MB |
-| litsea (japanese) | 0.16.0 | japanese.model | 1.1 MB | 16,722,972 | 623,392 | 12.0 MB |
-| litsea (japanese, two-stage) | 0.16.0 | japanese_pos.model | 5.4 MB | 8,209,157 | 363,630 | 44.9 MB |
-| vibrato | 0.5.3 | ipadic-mecab-2.7.0 | 45.6 MB | 7,881,993 | 183,118 | 68.8 MB |
-| lindera | 7.0.0 | ipadic | 45.3 MB | 6,787,817 | 333,025 | 18.3 MB |
-| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 6,563,562 | 282,572 | 33.8 MB |
-| lindera | 7.0.0 | unidic | 189.9 MB | 4,723,004 | 253,681 | 91.0 MB |
-| alyze (kuromoji) | 0.2.0 | ipadic (embedded) | 12.5 MB | 4,584,678 | 182,014 | 18.0 MB |
-| vibrato | 0.5.3 | unidic-cwj-3.1.1 | 684.2 MB | 4,058,161 | 203,445 | 723.8 MB |
-| lindera | 7.0.0 | sudachidict | 564.9 MB | 3,807,446 | 202,115 | 155.1 MB |
-| rust-tinysegmenter | 0.1.1 | - | - | 2,604,513 | 52,431 | 3.8 MB |
-| kuromoji (Lucene) | 10.6.0 | ipadic (bundled) | 8.7 MB | 2,604,376 | 65,793 | 111.2 MB |
-| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 2,586,761 | 99,031 | 736.5 MB |
-| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 2,518,872 | 119,100 | 371.5 MB |
-| lindera | 7.0.0 | unidic-cwj | 1,244.3 MB | 2,304,829 | 128,556 | 1,009.6 MB |
-| lindera | 7.0.0 | unidic-csj | 1,264.6 MB | 2,293,105 | 130,524 | 1,029.9 MB |
-| kuromoji (Atilika) | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 2,260,815 | 80,788 | 341.4 MB |
-| sudachi.rs | git tag `v0.7.0` | sudachi-dictionary-20261015-core | 192.9 MB | 1,837,778 | 76,484 | 176.0 MB |
-| mecab | thirdparty submodule | unidic-cwj-202512 | 1,252.8 MB | 1,616,467 | 84,182 | 485.2 MB |
-| vibrato | 0.5.3 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 1,589,938 | 55,646 | 326.0 MB |
-| sudachi | 0.8.2 | sudachi-dictionary-20261015-core | 192.9 MB | 808,914 | 27,098 | 566.3 MB |
+| vaporetto | 0.7.0 | kytea jp-0.4.7-5.mod | 80.6 MB | 25,271,524 | 1,143,837 | 188.7 MB |
+| litsea (japanese) | 0.16.0 | japanese.model | 1.1 MB | 16,606,245 | 718,540 | 12.0 MB |
+| litsea (japanese, two-stage) | 0.16.0 | japanese_pos.model | 5.4 MB | 8,125,056 | 319,308 | 44.9 MB |
+| vibrato | 0.5.3 | ipadic-mecab-2.7.0 | 45.6 MB | 7,845,596 | 257,892 | 68.8 MB |
+| lindera | 7.0.0 | ipadic | 45.3 MB | 6,624,743 | 333,468 | 18.2 MB |
+| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 6,494,042 | 323,648 | 33.7 MB |
+| lindera | 7.0.0 | unidic | 189.9 MB | 4,663,269 | 246,854 | 90.9 MB |
+| alyze (kuromoji) | 0.2.0 | ipadic (embedded) | 12.5 MB | 4,506,713 | 185,606 | 18.0 MB |
+| vibrato | 0.5.3 | unidic-cwj-3.1.1 | 684.2 MB | 3,944,257 | 188,425 | 723.7 MB |
+| lindera | 7.0.0 | sudachidict | 564.9 MB | 3,816,300 | 192,864 | 155.1 MB |
+| rust-tinysegmenter | 0.1.1 | - | - | 2,727,841 | 76,541 | 3.8 MB |
+| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 2,596,773 | 53,237 | 736.6 MB |
+| kuromoji (Lucene) | 10.6.0 | ipadic (bundled) | 8.7 MB | 2,592,213 | 64,598 | 111.3 MB |
+| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 2,496,750 | 115,473 | 371.6 MB |
+| lindera | 7.0.0 | unidic-csj | 1,264.6 MB | 2,353,893 | 115,446 | 1,029.8 MB |
+| lindera | 7.0.0 | unidic-cwj | 1,244.3 MB | 2,350,549 | 130,874 | 1,009.5 MB |
+| kuromoji (Atilika) | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 2,263,056 | 64,141 | 341.5 MB |
+| sudachi.rs | git tag `v0.7.0` | sudachi-dictionary-20261015-core | 192.9 MB | 1,802,163 | 69,095 | 175.9 MB |
+| mecab | thirdparty submodule | unidic-cwj-202512 | 1,252.8 MB | 1,588,292 | 76,189 | 485.1 MB |
+| vibrato | 0.5.3 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 1,578,634 | 59,189 | 326.0 MB |
+| sudachi | 0.8.2 | sudachi-dictionary-20261015-core | 192.9 MB | 797,026 | 27,874 | 565.7 MB |
 
 ### Korean (`mujeong.txt`, 320,850 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (korean) | 0.16.0 | korean.model | 0.1 MB | 24,081,430 | 883,999 | 4.2 MB |
-| litsea (korean, two-stage) | 0.16.0 | korean_pos.model | 3.9 MB | 7,605,267 | 328,732 | 32.3 MB |
-| mecab | thirdparty submodule | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 3,668,364 | 174,481 | 70.5 MB |
-| lindera | 7.0.0 | ko-dic | 81.6 MB | 3,600,781 | 99,692 | 83.8 MB |
-| alyze (nori) | 0.2.0 | mecab-ko-dic (embedded) | 43.2 MB | 2,621,246 | 99,389 | 47.9 MB |
-| mecab-ko | 0.996-ko-0.9.2 | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 1,682,780 | 108,831 | 70.3 MB |
-| nori (Lucene) | 10.6.0 | mecab-ko-dic (bundled) | 23.9 MB | 1,353,593 | 47,301 | 158.0 MB |
+| litsea (korean) | 0.16.0 | korean.model | 0.1 MB | 24,042,430 | 1,065,937 | 4.2 MB |
+| litsea (korean, two-stage) | 0.16.0 | korean_pos.model | 3.9 MB | 7,626,334 | 307,392 | 32.3 MB |
+| mecab | thirdparty submodule | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 3,608,106 | 192,029 | 70.4 MB |
+| lindera | 7.0.0 | ko-dic | 81.6 MB | 3,589,310 | 95,548 | 83.7 MB |
+| alyze (nori) | 0.2.0 | mecab-ko-dic (embedded) | 43.2 MB | 2,625,118 | 108,350 | 48.0 MB |
+| mecab-ko | 0.996-ko-0.9.2 | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 1,675,894 | 98,272 | 70.3 MB |
+| nori (Lucene) | 10.6.0 | mecab-ko-dic (bundled) | 23.9 MB | 1,342,826 | 43,246 | 158.0 MB |
 
 ### Chinese (`rulin_waishi.txt`, 328,153 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (chinese) | 0.16.0 | chinese.model | 1.9 MB | 16,104,948 | 626,072 | 19.2 MB |
-| lindera | 7.0.0 | cc-cedict | 22.1 MB | 14,821,366 | 839,669 | 9.8 MB |
-| lindera | 7.0.0 | jieba | 49.0 MB | 10,627,332 | 738,976 | 22.3 MB |
-| litsea (chinese, two-stage) | 0.16.0 | chinese_pos.model | 8.0 MB | 6,240,491 | 227,699 | 56.0 MB |
-| alyze (smartcn) | 0.2.0 | smartcn (embedded) | 4.5 MB | 5,403,179 | 254,533 | 22.0 MB |
+| litsea (chinese) | 0.16.0 | chinese.model | 1.9 MB | 15,976,908 | 749,540 | 19.2 MB |
+| lindera | 7.0.0 | cc-cedict | 22.1 MB | 14,782,429 | 758,476 | 9.8 MB |
+| lindera | 7.0.0 | jieba | 49.0 MB | 10,597,993 | 748,201 | 22.3 MB |
+| litsea (chinese, two-stage) | 0.16.0 | chinese_pos.model | 8.0 MB | 6,141,077 | 223,464 | 56.0 MB |
+| alyze (smartcn) | 0.2.0 | smartcn (embedded) | 4.5 MB | 5,308,415 | 267,136 | 22.0 MB |
 
 ### English (`pride_and_prejudice.txt`, 677,531 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| alyze (UAX #29) | 0.2.0 | - | - | 321,883,225 | 19,996,784 | 3.0 MB |
-| litsea (english) | 0.16.0 | english.model | 0.1 MB | 33,051,314 | 951,716 | 4.6 MB |
-| litsea (english, two-stage) | 0.16.0 | english_pos.model | 2.9 MB | 12,125,331 | 300,371 | 23.7 MB |
+| alyze (UAX #29) | 0.2.0 | - | - | 322,484,408 | 25,960,954 | 2.9 MB |
+| litsea (english) | 0.16.0 | english.model | 0.1 MB | 32,483,073 | 1,515,818 | 4.6 MB |
+| litsea (english, two-stage) | 0.16.0 | english_pos.model | 2.9 MB | 12,010,536 | 456,011 | 23.7 MB |
 
 These numbers depend heavily on the measurement environment (CPU, memory
 bandwidth, OS scheduler, JIT/JVM warm-up) and should only be used to compare
 tokenizers measured together on the same run, not as absolute benchmarks.
 Reproduce with `./run_all.sh | tee ./results` and `./stats.py < ./results`
 as described above.
+
+## Segmentation accuracy
+
+Measured 2026-11-23 on the machine above with `./segment_all.sh`. Every row
+segments with the same executable and options as in the speed tables: run
+with `BENCH_TOKENS=<file>`, each bench segments its input a second time after
+the timed loop and writes the tokens, and `segmentation.py` scores them.
+
+A token counts as correct when it covers exactly the same characters as a
+token of the other side. Precision is over the tokens of the row, and recall
+over the tokens of the reference or the gold data. Before scoring, tokens
+whose first character is whitespace, punctuation, a symbol or a control
+character are dropped from both sides, as Lucene's kuromoji and nori discard
+punctuation, so that the rows that discard punctuation can be compared with
+the rows that keep it.
+
+### Agreement with the reference implementation
+
+The rows that read the same dictionary or model are compared with a
+reference implementation of it, on the corpora of the speed tables. Agreement
+shows how closely an implementation reproduces the reference, not whether its
+segmentation is right. `kuromoji (Lucene)` and `alyze (kuromoji)` write the
+same tokens, as do `nori (Lucene)` and `alyze (nori)`, and `lindera` with
+`ko-dic` and `mecab-ko`. `lindera`'s `ipadic` is built from
+`mecab-ipadic-2.7.0-20250920`, a later archive of the IPADIC version that
+`mecab` reads (2.7.0-20070801); vibrato's release notes say that its
+`ipadic-mecab-2.7.0` is built from IPADIC v2.7.0.
+
+#### IPADIC (reference: mecab, ipadic 2.7.0)
+
+| Tokenizer | Dictionary / Model | Agreement F1 [%] | Lines that differ |
+| --- | --- | ---: | ---: |
+| lindera | ipadic | 99.96 | 30 of 2,346 |
+| vibrato | ipadic-mecab-2.7.0 | 100.00 | 1 of 2,346 |
+| kuromoji (Atilika) | ipadic (bundled) | 99.34 | 426 of 2,346 |
+| kuromoji (Lucene) | ipadic (bundled) | 99.41 | 398 of 2,346 |
+| alyze (kuromoji) | ipadic (embedded) | 99.41 | 398 of 2,346 |
+
+#### UniDic CWJ 3.1.1 (reference: mecab, unidic-cwj-3.1.1)
+
+| Tokenizer | Dictionary / Model | Agreement F1 [%] | Lines that differ |
+| --- | --- | ---: | ---: |
+| vibrato | unidic-cwj-3.1.1 | 99.98 | 6 of 2,346 |
+| vibrato | unidic-cwj-3.1.1+compact-dual | 99.97 | 15 of 2,346 |
+
+#### UniDic CWJ 202512 (reference: mecab, unidic-cwj-202512)
+
+| Tokenizer | Dictionary / Model | Agreement F1 [%] | Lines that differ |
+| --- | --- | ---: | ---: |
+| lindera | unidic-cwj | 100.00 | 2 of 2,346 |
+
+#### mecab-ko-dic 2.1.1 (reference: mecab-ko, mecab-ko-dic 2.1.1-20180720)
+
+| Tokenizer | Dictionary / Model | Agreement F1 [%] | Lines that differ |
+| --- | --- | ---: | ---: |
+| mecab | mecab-ko-dic 2.1.1-20180720 | 99.50 | 329 of 3,967 |
+| lindera | ko-dic | 100.00 | 0 of 3,967 |
+| nori (Lucene) | mecab-ko-dic (bundled) | 99.80 | 132 of 3,967 |
+| alyze (nori) | mecab-ko-dic (embedded) | 99.80 | 132 of 3,967 |
+
+#### SudachiDict 20261015 core (reference: sudachi, sudachi-dictionary-20261015-core)
+
+| Tokenizer | Dictionary / Model | Agreement F1 [%] | Lines that differ |
+| --- | --- | ---: | ---: |
+| sudachi.rs | sudachi-dictionary-20261015-core | 99.73 | 192 of 2,346 |
+
+#### KyTea model jp-0.4.7-5 (reference: kytea, jp-0.4.7-5.mod)
+
+| Tokenizer | Dictionary / Model | Agreement F1 [%] | Lines that differ |
+| --- | --- | ---: | ---: |
+| vaporetto | kytea jp-0.4.7-5.mod | 99.96 | 47 of 2,346 |
+
+### Accuracy against gold-standard data
+
+The gold data are the test sets of the parallel Universal Dependencies
+treebanks
+[UD_Japanese-PUD](https://github.com/UniversalDependencies/UD_Japanese-PUD),
+[UD_Korean-PUD](https://github.com/UniversalDependencies/UD_Korean-PUD),
+[UD_Chinese-PUD](https://github.com/UniversalDependencies/UD_Chinese-PUD) and
+[UD_English-PUD](https://github.com/UniversalDependencies/UD_English-PUD)
+(release r2.19, 1,000 sentences each, CC BY-SA 3.0), and, for Korean
+morphemes, the dev set of [KLUE-DP](https://github.com/KLUE-benchmark/KLUE)
+(v1.1.0, 2,000 sentences, CC BY-SA 4.0). `./download_resources.sh` fetches
+them; they are not part of this repository. None of them is in the training
+data of litsea's models (UD Japanese-GSD, Korean-GSD, Chinese-GSD and
+English-EWT) or of lindera's jieba dictionary (UD Chinese-GSD and GSDSimp).
+
+Every row is scored against the gold data of its language, and the Standard
+column says whether the row segments by the standard of the gold data. For
+the rows marked "different", the score measures how far their units are from
+that standard, not how accurate they are.
+
+* Japanese: the gold data uses UniDic short units and concatenates cardinal
+  numbers into one word, so adjacent tokens made only of digits are merged on
+  both sides first. The UniDic rows and litsea follow short units. `kytea`
+  and `vaporetto` (the same KyTea model) also split conjugated words into stem
+  and ending, so they are marked "close". The IPADIC rows and
+  `rust-tinysegmenter` use IPADIC's units, the Sudachi rows mode C (the mode
+  for named entities) and `lindera`'s `sudachidict` the SudachiDict lexicon
+  without Sudachi's split modes, so they are marked "different".
+* Korean: UD_Korean-PUD has eojeols (the space-separated words), which litsea
+  outputs; the other rows output morphemes. KLUE-DP's morphemes, annotated by
+  Korean linguists following the TTA guidelines, are close to mecab-ko-dic's
+  but given as base forms: an eojeol whose morphemes do not concatenate back
+  to it (된 = 되 + ㄴ) is left out on both sides, which leaves 82.0 % of its
+  22,496 eojeols scored. The text of a KLUE-DP sentence is its eojeols joined
+  by spaces.
+* Chinese: UD_Chinese-PUD is in traditional script. litsea and `lindera`'s
+  `jieba` are trained on UD Chinese-GSD, which, like the PUD treebank, Google
+  annotated. CC-CEDICT gives words without a segmentation standard, and
+  smartcn is for simplified Chinese only.
+* English: the gold data splits contractions into words (do + n't). The F1
+  column scores these words; "F1, tokens" scores the unsplit tokens (don't),
+  which is how UAX #29 segments.
+
+#### Japanese, UD_Japanese-PUD r2.19 (UniDic short units)
+
+| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] |
+| --- | --- | --- | ---: | ---: | ---: |
+| vibrato | unidic-cwj-3.1.1 | same | 98.57 | 99.03 | 98.80 |
+| vibrato | unidic-cwj-3.1.1+compact-dual | same | 98.55 | 99.00 | 98.77 |
+| mecab | unidic-cwj-3.1.1 | same | 98.50 | 99.01 | 98.75 |
+| mecab | unidic-cwj-202512 | same | 97.95 | 98.98 | 98.46 |
+| lindera | unidic-cwj | same | 97.95 | 98.98 | 98.46 |
+| lindera | unidic | same | 97.78 | 98.94 | 98.36 |
+| lindera | unidic-csj | same | 97.70 | 98.76 | 98.23 |
+| litsea (japanese) | japanese.model | same | 97.51 | 97.64 | 97.57 |
+| litsea (japanese, two-stage) | japanese_pos.model | same | 97.42 | 97.60 | 97.51 |
+| vaporetto | kytea jp-0.4.7-5.mod | close | 81.02 | 89.09 | 84.87 |
+| kytea | jp-0.4.7-5.mod | close | 81.00 | 89.09 | 84.85 |
+| sudachi.rs | sudachi-dictionary-20261015-core | different | 96.28 | 93.12 | 94.68 |
+| sudachi | sudachi-dictionary-20261015-core | different | 96.11 | 92.77 | 94.41 |
+| lindera | ipadic | different | 94.99 | 91.88 | 93.41 |
+| kuromoji (Lucene) | ipadic (bundled) | different | 94.94 | 91.87 | 93.38 |
+| alyze (kuromoji) | ipadic (embedded) | different | 94.94 | 91.87 | 93.38 |
+| mecab | ipadic 2.7.0 | different | 94.61 | 91.05 | 92.80 |
+| vibrato | ipadic-mecab-2.7.0 | different | 94.61 | 91.05 | 92.80 |
+| kuromoji (Atilika) | ipadic (bundled) | different | 94.48 | 90.91 | 92.66 |
+| lindera | sudachidict | different | 94.26 | 90.02 | 92.09 |
+| rust-tinysegmenter | - | different | 92.11 | 89.24 | 90.66 |
+
+#### Korean, UD_Korean-PUD r2.19 (eojeols)
+
+| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] |
+| --- | --- | --- | ---: | ---: | ---: |
+| litsea (korean, two-stage) | korean_pos.model | same | 82.50 | 69.28 | 75.32 |
+| litsea (korean) | korean.model | same | 82.50 | 69.28 | 75.31 |
+| mecab-ko | mecab-ko-dic 2.1.1-20180720 | different | 25.90 | 43.32 | 32.42 |
+| lindera | ko-dic | different | 25.90 | 43.32 | 32.42 |
+| nori (Lucene) | mecab-ko-dic (bundled) | different | 25.89 | 43.32 | 32.41 |
+| alyze (nori) | mecab-ko-dic (embedded) | different | 25.89 | 43.32 | 32.41 |
+| mecab | mecab-ko-dic 2.1.1-20180720 | different | 25.83 | 43.26 | 32.35 |
+
+#### Korean, KLUE-DP v1.1 dev (morphemes)
+
+| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] |
+| --- | --- | --- | ---: | ---: | ---: |
+| mecab-ko | mecab-ko-dic 2.1.1-20180720 | close | 91.91 | 93.08 | 92.49 |
+| lindera | ko-dic | close | 91.91 | 93.08 | 92.49 |
+| nori (Lucene) | mecab-ko-dic (bundled) | close | 91.90 | 93.09 | 92.49 |
+| alyze (nori) | mecab-ko-dic (embedded) | close | 91.90 | 93.09 | 92.49 |
+| mecab | mecab-ko-dic 2.1.1-20180720 | close | 91.67 | 92.91 | 92.29 |
+| litsea (korean, two-stage) | korean_pos.model | different | 35.54 | 19.12 | 24.86 |
+| litsea (korean) | korean.model | different | 35.51 | 19.10 | 24.84 |
+
+#### Chinese, UD_Chinese-PUD r2.19 (traditional)
+
+| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] |
+| --- | --- | --- | ---: | ---: | ---: |
+| litsea (chinese) | chinese.model | same | 85.22 | 88.00 | 86.59 |
+| litsea (chinese, two-stage) | chinese_pos.model | same | 85.03 | 88.08 | 86.52 |
+| lindera | jieba | same | 82.53 | 88.80 | 85.55 |
+| lindera | cc-cedict | different | 79.37 | 81.69 | 80.51 |
+| alyze (smartcn) | smartcn (embedded) | different | 43.29 | 61.47 | 50.80 |
+
+#### English, UD_English-PUD r2.19
+
+| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] | F1, tokens [%] |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| litsea (english, two-stage) | english_pos.model | same | 99.71 | 99.73 | 99.72 | 98.98 |
+| litsea (english) | english.model | same | 99.62 | 99.64 | 99.63 | 98.89 |
+| alyze (UAX #29) | - | different | 98.70 | 98.66 | 98.68 | 99.34 |
 
 ## License
 
