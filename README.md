@@ -99,10 +99,10 @@ three ways:
 | [rust-tinysegmenter](https://github.com/woxtu/rust-tinysegmenter) | Rust | Classifier | A Rust implementation of TinySegmenter, whose model is learned by boosting and splits as MeCab with IPADIC does | Japanese |
 | [litsea](https://github.com/mosuka/litsea) | Rust | Classifier | AdaBoost, inspired by TinySegmenter; the two-stage models learn the boundaries and the parts of speech with an averaged perceptron | Japanese, Korean, Chinese, English |
 
-The notes under [Results](#results) give the conditions under which some
-tokenizers are measured: versions, settings and dictionaries.
+The notes under [Segmentation speed](#segmentation-speed) give the conditions
+under which some tokenizers are measured: versions, settings and dictionaries.
 
-## Results
+## Segmentation speed
 
 Measured 2026-11-24 on the following environment.
 
@@ -120,8 +120,8 @@ comparable with these.
 
 Each tokenizer segmented its corpus 100 times (after 1 warm-up iteration,
 excluded from the statistics). Speed is in characters per second; higher is
-better. Std dev is the population standard deviation across the 100
-iterations.
+better. The tables are sorted by speed, the fastest first. Std dev is the
+population standard deviation across the 100 iterations.
 
 `litsea (*, two-stage)` performs segmentation and POS tagging together from
 a single model file, via `Segmenter::with_two_stage_learner`; the other litsea
@@ -447,17 +447,18 @@ same tokens, as do `nori (Lucene)` and `alyze (nori)`, and `lindera` with
 not compared with `sudachi`: it is SudachiDict 20260723 with the small, core
 and notcore lexicons and runs without Sudachi's split modes, while `sudachi`
 reads the 20261015 core dictionary in each split mode. `sudachi.rs` is
-compared with `sudachi` in the same mode.
+compared with `sudachi` in the same mode. The tables are sorted by the
+agreement F1, the highest first.
 
 #### IPADIC (reference: mecab, ipadic 2.7.0)
 
 | Tokenizer | Dictionary / Model | Agreement F1 [%] | Lines that differ |
 | --- | --- | ---: | ---: |
-| lindera | ipadic | 99.96 | 30 of 2,346 |
 | vibrato | ipadic-mecab-2.7.0 | 99.99 | 1 of 2,346 |
-| kuromoji (Atilika) | ipadic (bundled) | 99.34 | 426 of 2,346 |
+| lindera | ipadic | 99.96 | 30 of 2,346 |
 | kuromoji (Lucene) | ipadic (bundled) | 99.41 | 398 of 2,346 |
 | alyze (kuromoji) | ipadic (embedded) | 99.41 | 398 of 2,346 |
+| kuromoji (Atilika) | ipadic (bundled) | 99.34 | 426 of 2,346 |
 
 #### UniDic CWJ 3.1.1 (reference: mecab, unidic-cwj-3.1.1)
 
@@ -476,10 +477,10 @@ compared with `sudachi` in the same mode.
 
 | Tokenizer | Dictionary / Model | Agreement F1 [%] | Lines that differ |
 | --- | --- | ---: | ---: |
-| mecab | mecab-ko-dic 2.1.1-20180720 | 99.50 | 329 of 3,967 |
 | lindera | ko-dic | 100.00 | 0 of 3,967 |
 | nori (Lucene) | mecab-ko-dic (bundled) | 99.80 | 132 of 3,967 |
 | alyze (nori) | mecab-ko-dic (embedded) | 99.80 | 132 of 3,967 |
+| mecab | mecab-ko-dic 2.1.1-20180720 | 99.50 | 329 of 3,967 |
 
 #### SudachiDict 20261015 core, mode A (reference: sudachi (mode A), sudachi-dictionary-20261015-core)
 
@@ -551,7 +552,13 @@ boundary precision of the coarser layers is not given, nor the F1 of bunsetsu:
 every tokenizer splits finer than these layers, so these numbers would show how
 finely a tokenizer splits, not its errors. Chinese, with one layer, and
 English, with words and tokens, are given precision, recall and F1 of UD's
-words. The tables are sorted by the F1 of the first layer.
+words.
+
+The tables are sorted by the F1 of the first layer (short units, morphemes or
+words), the highest first: this is the order of how closely the tokenizers
+follow the standard of that layer, not a ranking of how good they are. To
+compare the Japanese or Korean tokenizers of different standards, see the
+boundary precision and the boundary recall.
 
 * Japanese: UD Japanese is tokenized in three layers, as the Balanced Corpus
   of Contemporary Written Japanese (BCCWJ) is: short units, long units and
