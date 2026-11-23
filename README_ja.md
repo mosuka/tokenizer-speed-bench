@@ -68,6 +68,38 @@ Windows では WSL で実行してください。
 % ./segment_all.sh | tee ./accuracy
 ```
 
+## トークナイザ
+
+表では、次のトークナイザを比べます。分割の方式は、次の 3 種類のどれかです。
+
+* **辞書**: 文の中から辞書の語を引き、候補をラティスに並べ、合計のコストが最も
+  小さい経路を Viterbi 法で選びます。単位は辞書の語なので、同じトークナイザでも
+  辞書が違えば分割が変わります。
+* **分類器**: 文字と文字の間ごとに、そこが語の境界かどうかを、周りの文字から
+  判定します。判定のモデルは、分割済みのコーパスから学習したものです。辞書は
+  要らず、単位は学習に使ったコーパスの単位になります。
+* **規則**: 規則が定める語の境界で分割します。
+
+| トークナイザ | 実装の言語 | 種類 | 方式 | 表にある言語 |
+| --- | --- | --- | --- | --- |
+| [mecab](https://github.com/taku910/mecab) | C++ | 辞書 | コストを条件付き確率場（CRF）で学習 | 日本語、韓国語 |
+| [mecab-ko](https://bitbucket.org/eunjeon/mecab-ko) | C++ | 辞書 | 韓国語向けの MeCab の fork で、空白の後の一部の品詞のコストを上げる | 韓国語 |
+| [lindera](https://github.com/lindera/lindera) | Rust | 辞書 | kuromoji-rs から fork したもので、出どころの違う多くの辞書を読む | 日本語、韓国語、中国語 |
+| [vibrato](https://github.com/daac-tools/vibrato) | Rust | 辞書 | Viterbi 法の高速な実装 | 日本語 |
+| [sudachi](https://github.com/WorksApplications/Sudachi) | Java | 辞書 | 3 つの分割モード（A、B、C）を持ち、表は C | 日本語 |
+| [sudachi.rs](https://github.com/WorksApplications/sudachi.rs) | Rust | 辞書 | Sudachi の Rust の実装で、表は C モード | 日本語 |
+| [kuromoji (Atilika)](https://github.com/atilika/kuromoji) | Java | 辞書 | jar に IPADIC を同梱 | 日本語 |
+| [kuromoji (Lucene)](https://lucene.apache.org/) | Java | 辞書 | Lucene の日本語の解析モジュールで、IPADIC を同梱 | 日本語 |
+| [nori (Lucene)](https://lucene.apache.org/) | Java | 辞書 | Lucene の韓国語の解析モジュールで、mecab-ko-dic を同梱 | 韓国語 |
+| [alyze](https://github.com/turbopuffer/alyze) | Rust | 辞書、規則 | Lucene の kuromoji・nori の移植と、smartcn（簡体字向けの、ICTCLAS の辞書の上の隠れマルコフモデル）の移植、UAX #29 のトークナイザ（規則） | 日本語、韓国語、中国語、英語 |
+| [kytea](https://github.com/neubig/kytea) | C++ | 分類器 | SVM かロジスティック回帰による点予測 | 日本語 |
+| [vaporetto](https://github.com/daac-tools/vaporetto) | Rust | 分類器 | 点予測で、KyTea のモデルを読む | 日本語 |
+| [rust-tinysegmenter](https://github.com/woxtu/rust-tinysegmenter) | Rust | 分類器 | TinySegmenter の Rust の実装。モデルはブースティングで学習したもので、MeCab と IPADIC と同じ単位で分割する | 日本語 |
+| [litsea](https://github.com/mosuka/litsea) | Rust | 分類器 | TinySegmenter に着想を得た AdaBoost。two-stage のモデルは、境界と品詞を平均化パーセプトロンで学習する | 日本語、韓国語、中国語、英語 |
+
+一部の行を計測した条件（版、設定、辞書）は、[計測結果](#計測結果)の注記に
+書いています。
+
 ## 計測結果
 
 2026-11-23 に以下の環境で計測しました。

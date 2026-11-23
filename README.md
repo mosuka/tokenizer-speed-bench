@@ -65,6 +65,43 @@ data that `./download_resources.sh` fetches, and prints the tables.
 % ./segment_all.sh | tee ./accuracy
 ```
 
+## Tokenizers
+
+The tables compare the following tokenizers. They segment text in one of
+three ways:
+
+* **Dictionary**: the tokenizer looks up the words of its dictionary in the
+  sentence, puts the candidates in a lattice and picks the path of the lowest
+  total cost with the Viterbi algorithm. The units are the words of the
+  dictionary, so the same tokenizer segments differently with another
+  dictionary.
+* **Classifier**: the tokenizer decides, for each place between two
+  characters, whether a word boundary is there, from the characters around
+  it, with a model learned from a segmented corpus. It needs no dictionary,
+  and its units are those of the corpus it learned from.
+* **Rules**: the tokenizer splits at the word boundaries that a set of rules
+  defines.
+
+| Tokenizer | Written in | Kind | Method | Languages in the tables |
+| --- | --- | --- | --- | --- |
+| [mecab](https://github.com/taku910/mecab) | C++ | Dictionary | Costs learned with conditional random fields (CRF) | Japanese, Korean |
+| [mecab-ko](https://bitbucket.org/eunjeon/mecab-ko) | C++ | Dictionary | A fork of MeCab for Korean that raises the cost of some parts of speech after a space | Korean |
+| [lindera](https://github.com/lindera/lindera) | Rust | Dictionary | Forked from kuromoji-rs; reads dictionaries of many sources | Japanese, Korean, Chinese |
+| [vibrato](https://github.com/daac-tools/vibrato) | Rust | Dictionary | A fast implementation of the Viterbi algorithm | Japanese |
+| [sudachi](https://github.com/WorksApplications/Sudachi) | Java | Dictionary | Three split modes (A, B, C); the tables use C | Japanese |
+| [sudachi.rs](https://github.com/WorksApplications/sudachi.rs) | Rust | Dictionary | A Rust implementation of Sudachi; the tables use mode C | Japanese |
+| [kuromoji (Atilika)](https://github.com/atilika/kuromoji) | Java | Dictionary | IPADIC bundled in the jar | Japanese |
+| [kuromoji (Lucene)](https://lucene.apache.org/) | Java | Dictionary | Lucene's Japanese analysis module, IPADIC bundled | Japanese |
+| [nori (Lucene)](https://lucene.apache.org/) | Java | Dictionary | Lucene's Korean analysis module, mecab-ko-dic bundled | Korean |
+| [alyze](https://github.com/turbopuffer/alyze) | Rust | Dictionary, rules | Ports of Lucene's kuromoji and nori, and of smartcn (a hidden Markov model over the ICTCLAS dictionary, for simplified Chinese); a UAX #29 tokenizer (rules) | Japanese, Korean, Chinese, English |
+| [kytea](https://github.com/neubig/kytea) | C++ | Classifier | Pointwise prediction with SVM or logistic regression | Japanese |
+| [vaporetto](https://github.com/daac-tools/vaporetto) | Rust | Classifier | Pointwise prediction; reads KyTea's models | Japanese |
+| [rust-tinysegmenter](https://github.com/woxtu/rust-tinysegmenter) | Rust | Classifier | A Rust implementation of TinySegmenter, whose model is learned by boosting and splits as MeCab with IPADIC does | Japanese |
+| [litsea](https://github.com/mosuka/litsea) | Rust | Classifier | AdaBoost, inspired by TinySegmenter; the two-stage models learn the boundaries and the parts of speech with an averaged perceptron | Japanese, Korean, Chinese, English |
+
+The notes under [Results](#results) give the conditions under which some rows
+are measured: versions, settings and dictionaries.
+
 ## Results
 
 Measured 2026-11-23 on the following environment.
