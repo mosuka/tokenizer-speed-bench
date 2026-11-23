@@ -22,6 +22,8 @@ RE_DICT = [
     ('mecab-ko-dic-2_1_1', re.compile(r'Elapsed-mecab-ko-dic-2_1_1: ([0-9\.]+) \[sec\]'), CORPUS_KO),
     ('mecab-ko-ko-dic-2_1_1', re.compile(r'Elapsed-mecab-ko-ko-dic-2_1_1: ([0-9\.]+) \[sec\]'), CORPUS_KO),
     ('kuromoji', re.compile(r'Elapsed-kuromoji: ([0-9\.]+) \[sec\]'), CORPUS_JA),
+    ('lucene-kuromoji', re.compile(r'Elapsed-lucene-kuromoji: ([0-9\.]+) \[sec\]'), CORPUS_JA),
+    ('lucene-nori', re.compile(r'Elapsed-lucene-nori: ([0-9\.]+) \[sec\]'), CORPUS_KO),
     ('lindera-ipadic', re.compile(r'Elapsed-lindera-ipadic: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('lindera-unidic', re.compile(r'Elapsed-lindera-unidic: ([0-9\.]+) \[sec\]'), CORPUS_JA),
     ('lindera-sudachidict', re.compile(r'Elapsed-lindera-sudachidict: ([0-9\.]+) \[sec\]'), CORPUS_JA),

@@ -127,6 +127,16 @@ mvn compile
 mvn dependency:build-classpath -Dmdep.outputFile=classpath.txt
 popd
 
+pushd "./bench/lucene-kuromoji-bench"
+mvn compile
+mvn dependency:build-classpath -Dmdep.outputFile=classpath.txt
+popd
+
+pushd "./bench/lucene-nori-bench"
+mvn compile
+mvn dependency:build-classpath -Dmdep.outputFile=classpath.txt
+popd
+
 pushd "./bench/sudachirs-bench"
 cargo build --release
 popd
