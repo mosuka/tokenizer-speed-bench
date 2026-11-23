@@ -356,10 +356,28 @@ segmentation to the documentation of each language (see UD's
 [tokenization guidelines](https://universaldependencies.org/u/overview/tokenization.html)).
 Every row is scored against the layers that the UD data of its language
 annotates, so that rows that segment by different standards are read against
-the same data: UD's words with precision, recall and F1, and the other layers
-with F1. A row that follows another standard than a layer scores low on that
-layer; the notes say which rows follow which standard. The rows are sorted by
-the F1 of UD's words.
+the same data. The layers of Japanese (short units, long units, bunsetsu)
+and Korean (morphemes, eojeols) run from fine to coarse, each unit of a
+layer being made of whole units of the finer ones, and each layer is scored
+in two ways:
+
+* F1 of the units: how closely the row follows the standard of the layer. A
+  row that follows another standard scores low on it; the notes say which
+  rows follow which standard.
+* For the finest layer, "Cuts at ... boundaries" is the share of the row's
+  cuts (the edges of its tokens inside the sentence) that are boundaries of
+  the layer: it is low when the row splits inside the units. For a coarser
+  layer, "... boundaries kept" is the share of the layer's boundaries that no
+  token of the row crosses: it is low when the row joins units across them.
+
+A row whose cuts are all short-unit boundaries and that keeps every
+long-unit boundary segments somewhere between short and long units, whatever
+its standard. The cuts at the boundaries of the coarser layers are not
+given, nor the F1 of bunsetsu: every row splits finer than these layers, so
+these numbers would show how finely a row splits, not its errors. Chinese,
+with one layer, and English, with words and tokens, are given precision,
+recall and F1 of UD's words. The rows are sorted by the F1 of the first
+layer.
 
 * Japanese: UD Japanese is tokenized in three layers, as the Balanced Corpus
   of Contemporary Written Japanese (BCCWJ) is: short units, long units and
@@ -378,13 +396,18 @@ the F1 of UD's words.
     [UD_Japanese-PUDLUW](https://github.com/UniversalDependencies/UD_Japanese-PUDLUW),
     the long-unit version of the same sentences. No row follows long units.
   * Every bunsetsu boundary (MISC `BunsetuBILabel`) is also a boundary of
-    long and short units. "Bunsetsu boundaries kept" is the share of the 8,972
-    boundaries that no token of the row crosses; ignored tokens cross
-    nothing. Every row keeps at least 98.7 % of them, so the rows differ
-    mostly in how finely they split inside a bunsetsu. The tokens that cross
-    one are mostly multiword entries of IPADIC (役に立つ, として) and named
-    entities and idioms of `lindera`'s `sudachidict` (法の支配, トロイの木馬),
-    which join words of two bunsetsu.
+    long and short units. Ignored tokens cross no boundary, and the cuts are
+    those of the tokens that are scored.
+  * Every row but `kytea`, `vaporetto` and `rust-tinysegmenter` cuts at
+    short-unit boundaries in at least 98.7 % of its cuts, and every row keeps
+    at least 98.8 % of the long-unit and 98.7 % of the 8,972 bunsetsu
+    boundaries. The IPADIC and Sudachi rows score lower on short units because
+    their units are longer, not because they cut at wrong places. `kytea` and
+    `vaporetto` split inside short units (い / る), and `rust-tinysegmenter`
+    loses on both sides. The tokens that cross a bunsetsu boundary are mostly
+    multiword entries of IPADIC (役に立つ, として) and named entities and
+    idioms of `lindera`'s `sudachidict` (法の支配, トロイの木馬), which join
+    words of two bunsetsu.
   * `lindera`'s `ipadic` scores higher than `mecab`'s, as lindera 7.0.0
     breaks unknown words at `・` and the gold data splits katakana names
     there (コリ・シューマン), while MeCab keeps such a name as one unknown
@@ -396,8 +419,11 @@ the F1 of UD's words.
   output morphemes. The morphemes are the parts of each word's lemma split at
   `+` (조약에 = 조약+에). They are base forms, so a word whose parts do not
   concatenate back to it (의해 = 의하+어) is left out of the morpheme scores on
-  both sides, which leaves 23,517 of the 28,366 words (82.9 %) scored. The
-  sentences are not those of the PUD treebanks. UD_Korean-PUD is not used: it
+  both sides, which leaves 23,517 of the 28,366 words (82.9 %) scored; a cut
+  inside such a word is not counted. The mecab-ko-dic rows cut at morpheme
+  boundaries in 97.6 % of their cuts and litsea in all of its cuts, and every
+  row keeps every eojeol boundary. The sentences are not those of the PUD
+  treebanks. UD_Korean-PUD is not used: it
   splits the copula and some endings and compound nouns off eojeols
   (수준이지만 = 수준 + 이지만), so only 69.4 % of its words that are not
   punctuation are eojeols, and the others are not morphemes either.
@@ -416,41 +442,41 @@ the F1 of UD's words.
 
 #### Japanese, UD_Japanese-PUD r2.19 (short units, long units, bunsetsu)
 
-| Tokenizer | Dictionary / Model | Precision [%] | Recall [%] | F1 [%] | F1, long units [%] | Bunsetsu boundaries kept [%] |
+| Tokenizer | Dictionary / Model | F1, short units [%] | Cuts at short-unit boundaries [%] | F1, long units [%] | Long-unit boundaries kept [%] | Bunsetsu boundaries kept [%] |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| vibrato | unidic-cwj-3.1.1 | 98.57 | 99.03 | 98.80 | 67.39 | 99.97 |
-| vibrato | unidic-cwj-3.1.1+compact-dual | 98.55 | 99.00 | 98.77 | 67.40 | 99.97 |
-| mecab | unidic-cwj-3.1.1 | 98.50 | 99.01 | 98.75 | 67.37 | 99.97 |
-| mecab | unidic-cwj-202512 | 97.95 | 98.98 | 98.46 | 67.02 | 99.97 |
-| lindera | unidic-cwj | 97.95 | 98.98 | 98.46 | 67.02 | 99.97 |
-| lindera | unidic | 97.78 | 98.94 | 98.36 | 66.79 | 99.98 |
-| lindera | unidic-csj | 97.70 | 98.76 | 98.23 | 66.91 | 99.97 |
-| litsea (japanese) | japanese.model | 97.51 | 97.64 | 97.57 | 67.17 | 99.71 |
-| litsea (japanese, two-stage) | japanese_pos.model | 97.42 | 97.60 | 97.51 | 67.12 | 99.71 |
-| sudachi.rs | sudachi-dictionary-20261015-core | 96.28 | 93.12 | 94.68 | 71.50 | 99.94 |
-| sudachi | sudachi-dictionary-20261015-core | 96.11 | 92.77 | 94.41 | 71.59 | 99.94 |
-| lindera | ipadic | 94.99 | 91.88 | 93.41 | 70.18 | 99.45 |
-| kuromoji (Lucene) | ipadic (bundled) | 94.94 | 91.87 | 93.38 | 70.15 | 99.45 |
-| alyze (kuromoji) | ipadic (embedded) | 94.94 | 91.87 | 93.38 | 70.15 | 99.45 |
-| mecab | ipadic 2.7.0 | 94.61 | 91.05 | 92.80 | 70.70 | 99.45 |
-| vibrato | ipadic-mecab-2.7.0 | 94.61 | 91.05 | 92.80 | 70.70 | 99.45 |
-| kuromoji (Atilika) | ipadic (bundled) | 94.48 | 90.91 | 92.66 | 70.70 | 99.44 |
-| lindera | sudachidict | 94.26 | 90.02 | 92.09 | 72.84 | 99.78 |
-| rust-tinysegmenter | - | 92.11 | 89.24 | 90.66 | 68.55 | 98.74 |
-| vaporetto | kytea jp-0.4.7-5.mod | 81.02 | 89.09 | 84.87 | 57.27 | 99.89 |
-| kytea | jp-0.4.7-5.mod | 81.00 | 89.09 | 84.85 | 57.27 | 99.92 |
+| vibrato | unidic-cwj-3.1.1 | 98.80 | 99.33 | 67.39 | 99.97 | 99.97 |
+| vibrato | unidic-cwj-3.1.1+compact-dual | 98.77 | 99.32 | 67.40 | 99.97 | 99.97 |
+| mecab | unidic-cwj-3.1.1 | 98.75 | 99.29 | 67.37 | 99.97 | 99.97 |
+| mecab | unidic-cwj-202512 | 98.46 | 98.86 | 67.02 | 99.98 | 99.97 |
+| lindera | unidic-cwj | 98.46 | 98.86 | 67.02 | 99.98 | 99.97 |
+| lindera | unidic | 98.36 | 98.78 | 66.79 | 99.98 | 99.98 |
+| lindera | unidic-csj | 98.23 | 98.77 | 66.91 | 99.96 | 99.97 |
+| litsea (japanese) | japanese.model | 97.57 | 99.00 | 67.17 | 99.75 | 99.71 |
+| litsea (japanese, two-stage) | japanese_pos.model | 97.51 | 98.95 | 67.12 | 99.76 | 99.71 |
+| sudachi.rs | sudachi-dictionary-20261015-core | 94.68 | 99.81 | 71.50 | 99.91 | 99.94 |
+| sudachi | sudachi-dictionary-20261015-core | 94.41 | 99.81 | 71.59 | 99.93 | 99.94 |
+| lindera | ipadic | 93.41 | 99.15 | 70.18 | 99.42 | 99.45 |
+| kuromoji (Lucene) | ipadic (bundled) | 93.38 | 99.12 | 70.15 | 99.42 | 99.45 |
+| alyze (kuromoji) | ipadic (embedded) | 93.38 | 99.12 | 70.15 | 99.42 | 99.45 |
+| mecab | ipadic 2.7.0 | 92.80 | 99.19 | 70.70 | 99.42 | 99.45 |
+| vibrato | ipadic-mecab-2.7.0 | 92.80 | 99.19 | 70.70 | 99.42 | 99.45 |
+| kuromoji (Atilika) | ipadic (bundled) | 92.66 | 99.15 | 70.70 | 99.42 | 99.44 |
+| lindera | sudachidict | 92.09 | 99.49 | 72.84 | 99.80 | 99.78 |
+| rust-tinysegmenter | - | 90.66 | 97.99 | 68.55 | 98.87 | 98.74 |
+| vaporetto | kytea jp-0.4.7-5.mod | 84.87 | 91.23 | 57.27 | 99.93 | 99.89 |
+| kytea | jp-0.4.7-5.mod | 84.85 | 91.21 | 57.27 | 99.95 | 99.92 |
 
-#### Korean, UD_Korean-Kaist r2.19 test (eojeols, morphemes)
+#### Korean, UD_Korean-Kaist r2.19 test (morphemes, eojeols)
 
-| Tokenizer | Dictionary / Model | Precision [%] | Recall [%] | F1 [%] | F1, morphemes [%] |
+| Tokenizer | Dictionary / Model | F1, morphemes [%] | Cuts at morpheme boundaries [%] | F1, eojeols [%] | Eojeol boundaries kept [%] |
 | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (korean) | korean.model | 99.99 | 100.00 | 99.99 | 18.15 |
-| litsea (korean, two-stage) | korean_pos.model | 99.99 | 100.00 | 99.99 | 18.15 |
-| nori (Lucene) | mecab-ko-dic (bundled) | 13.69 | 27.38 | 18.25 | 92.80 |
-| alyze (nori) | mecab-ko-dic (embedded) | 13.69 | 27.38 | 18.25 | 92.80 |
-| mecab | mecab-ko-dic 2.1.1-20180720 | 13.68 | 27.37 | 18.24 | 92.71 |
-| mecab-ko | mecab-ko-dic 2.1.1-20180720 | 13.68 | 27.37 | 18.24 | 92.79 |
-| lindera | ko-dic | 13.68 | 27.37 | 18.24 | 92.79 |
+| nori (Lucene) | mecab-ko-dic (bundled) | 92.80 | 97.61 | 18.25 | 100.00 |
+| alyze (nori) | mecab-ko-dic (embedded) | 92.80 | 97.61 | 18.25 | 100.00 |
+| mecab-ko | mecab-ko-dic 2.1.1-20180720 | 92.79 | 97.61 | 18.24 | 100.00 |
+| lindera | ko-dic | 92.79 | 97.61 | 18.24 | 100.00 |
+| mecab | mecab-ko-dic 2.1.1-20180720 | 92.71 | 97.58 | 18.24 | 100.00 |
+| litsea (korean) | korean.model | 18.15 | 100.00 | 99.99 | 100.00 |
+| litsea (korean, two-stage) | korean_pos.model | 18.15 | 100.00 | 99.99 | 100.00 |
 
 #### Chinese, UD_Chinese-PUD r2.19 (traditional)
 

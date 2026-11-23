@@ -9,16 +9,19 @@ and scores them in two ways:
 - agreement: each row against the reference implementation of the same
   dictionary or model, on the speed corpora (AGREEMENT_GROUPS);
 - accuracy: each row against the layers of the Universal Dependencies (UD)
-  gold data of its language (GOLD_SETS): UD's words, and for Japanese long
-  units and bunsetsu boundaries, for Korean morphemes, for English the
-  surface tokens.
+  gold data of its language (GOLD_SETS): for Japanese short units, long
+  units and bunsetsu, for Korean morphemes and eojeols, for Chinese words,
+  for English words and the surface tokens.
 
 A token counts as correct when its span equals a span of the other side.
 Tokens whose first character is whitespace, punctuation, a symbol or a
 control character are dropped from both sides first, as Lucene's kuromoji
 and nori drop them, so that rows that discard punctuation can be compared
-with rows that keep it. A bunsetsu boundary counts as kept when no scored
-token crosses it.
+with rows that keep it. For the layers of Japanese and Korean, which run
+from fine to coarse, a row's cut (an edge of a scored token inside the
+line) counts as right when it is a boundary of the finest layer, and a
+boundary of a coarser layer counts as kept when no scored token crosses
+it.
 
 Usage (from the repository root):
   segmentation.py text <gold dir> <output dir>
@@ -171,6 +174,18 @@ class BoundaryCounts:
 
     def share(self) -> float:
         return self.kept / self.total if self.total else 0.0
+
+
+@dataclasses.dataclass
+class CutCounts:
+    """Counts of the cuts of the scored tokens that are gold boundaries."""
+
+    matched: int = 0
+    total: int = 0
+    failures: int = 0
+
+    def share(self) -> float:
+        return self.matched / self.total if self.total else 0.0
 
 
 @dataclasses.dataclass
@@ -344,9 +359,17 @@ AGREEMENT_GROUPS = [
 class GoldSet:
     """UD gold data for one language and the layers it is scored by.
 
-    The first layer is UD's words, given with precision, recall and F1; the
-    other layers are given with F1. With bunsetsu, the share of bunsetsu
-    boundaries kept is given too.
+    Without hierarchy, the first layer is given with precision, recall and
+    F1, and the other layers with F1. With hierarchy, the layers run from
+    fine to coarse, and each is given with its unit F1 and, for the finest
+    layer, the share of the row's cuts that are its boundaries (low when the
+    row splits inside its units) or, for a coarser layer, the share of its
+    boundaries that the row keeps (low when the row joins its units). With
+    bunsetsu, the share of bunsetsu boundaries kept is given last.
+
+    names maps a layer to its plural and attributive names in the columns
+    ("long units", "long-unit"); the first layer needs one only with
+    hierarchy.
     """
 
     key: str
@@ -354,21 +377,25 @@ class GoldSet:
     language: str
     file: str
     layers: tuple = ('word',)
+    names: dict = dataclasses.field(default_factory=dict)
+    hierarchy: bool = False
     morphemes: bool = False
     bunsetsu: bool = False
     merge_numbers: bool = False
 
 
-# Layer -> the name in an "F1, <name> [%]" column.
-LAYER_NAMES = {'luw': 'long units', 'morpheme': 'morphemes', 'token': 'tokens'}
-
 GOLD_SETS = [
     GoldSet('ja-pud', 'Japanese, UD_Japanese-PUD r2.19 (short units, long units, bunsetsu)', 'ja',
-            'ja_pud-ud-test.conllu', layers=('word', 'luw'), bunsetsu=True, merge_numbers=True),
-    GoldSet('ko-kaist', 'Korean, UD_Korean-Kaist r2.19 test (eojeols, morphemes)', 'ko',
-            'ko_kaist-ud-test.conllu', layers=('word', 'morpheme'), morphemes=True),
+            'ja_pud-ud-test.conllu', layers=('word', 'luw'),
+            names={'word': ('short units', 'short-unit'), 'luw': ('long units', 'long-unit')},
+            hierarchy=True, bunsetsu=True, merge_numbers=True),
+    GoldSet('ko-kaist', 'Korean, UD_Korean-Kaist r2.19 test (morphemes, eojeols)', 'ko',
+            'ko_kaist-ud-test.conllu', layers=('morpheme', 'word'),
+            names={'morpheme': ('morphemes', 'morpheme'), 'word': ('eojeols', 'eojeol')},
+            hierarchy=True, morphemes=True),
     GoldSet('zh-pud', 'Chinese, UD_Chinese-PUD r2.19 (traditional)', 'zh', 'zh_pud-ud-test.conllu'),
-    GoldSet('en-pud', 'English, UD_English-PUD r2.19', 'en', 'en_pud-ud-test.conllu', layers=('word', 'token')),
+    GoldSet('en-pud', 'English, UD_English-PUD r2.19', 'en', 'en_pud-ud-test.conllu', layers=('word', 'token'),
+            names={'token': ('tokens', 'token')}),
 ]
 
 TEXT_FILES = {
@@ -452,6 +479,38 @@ def count_boundaries(lines: list[str], system: list[list[str]], boundaries: list
     return counts
 
 
+def count_cuts(lines: list[str], system: list[list[str]], gold: list[list[tuple[int, int]]],
+               excluded: list[list[tuple[int, int]]], merge: bool) -> CutCounts:
+    """Count the cuts of the scored system tokens (their edges inside the
+    line) that are edges of gold spans, line by line. A cut inside an
+    excluded range is not counted, and the edges of excluded ranges count as
+    gold edges. With merge, runs of digits are merged on both sides first."""
+    counts = CutCounts()
+    for line, tokens, gold_spans, ranges in zip(lines, system, gold, excluded):
+        try:
+            spans = align(line, tokens)
+        except AlignmentError:
+            counts.failures += 1
+            continue
+        if merge:
+            spans, _ = merge_numbers(line, spans)
+            gold_spans, _ = merge_numbers(line, gold_spans)
+        edges = {p for span in gold_spans + ranges for p in span}
+        cuts = {p for span in scored_spans(line, spans, []) for p in span
+                if 0 < p < len(line) and not any(s < p < e for s, e in ranges)}
+        counts.total += len(cuts)
+        counts.matched += len(cuts & edges)
+    return counts
+
+
+def layer_boundaries(line: str, spans: list[tuple[int, int]], merge: bool) -> list[int]:
+    """The boundaries between the units of a layer: the start of every unit
+    but the first. With merge, runs of digits are merged first."""
+    if merge:
+        spans, _ = merge_numbers(line, spans)
+    return [start for start, _ in spans[1:]]
+
+
 def percent(value: float) -> str:
     return f'{100 * value:.2f}'
 
@@ -482,22 +541,67 @@ def agreement_tables(stats, segmentation_dir: str) -> list[str]:
     return out
 
 
-def score_gold(gold: GoldSet, sentences: list[Sentence],
-               system: list[list[str]]) -> tuple[list[Counts], BoundaryCounts | None]:
+@dataclasses.dataclass
+class GoldScores:
+    """One row's scores against a gold set: unit counts per layer, the cuts
+    at boundaries of the finest layer (with hierarchy), and the boundaries
+    kept per coarser layer and for 'bunsetsu'."""
+
+    units: dict[str, Counts]
+    cuts: CutCounts | None = None
+    kept: dict[str, BoundaryCounts] = dataclasses.field(default_factory=dict)
+
+    def failures(self) -> dict[str, int]:
+        """Lines that did not align, per count that has any."""
+        named = [(layer, counts) for layer, counts in self.units.items()]
+        named += [('cuts', self.cuts)] if self.cuts else []
+        named += [(f'{layer} boundaries', counts) for layer, counts in self.kept.items()]
+        return {name: counts.failures for name, counts in named if counts.failures}
+
+
+def score_gold(gold: GoldSet, sentences: list[Sentence], system: list[list[str]]) -> GoldScores:
     """Score one row's tokens against each layer of a gold set, each layer
-    with its own excluded ranges, and count the bunsetsu boundaries kept
-    (None when the gold set has none)."""
+    with its own excluded ranges."""
     lines = [sentence.text for sentence in sentences]
-    results = [score_against(lines, system, [s.layers[layer] for s in sentences],
-                             [s.excluded.get(layer, []) for s in sentences], gold.merge_numbers)
-               for layer in gold.layers]
-    boundaries = count_boundaries(lines, system, [s.boundaries for s in sentences]) if gold.bunsetsu else None
-    return results, boundaries
+    scores = GoldScores({layer: score_against(lines, system, [s.layers[layer] for s in sentences],
+                                              [s.excluded.get(layer, []) for s in sentences], gold.merge_numbers)
+                         for layer in gold.layers})
+    if gold.hierarchy:
+        finest = gold.layers[0]
+        scores.cuts = count_cuts(lines, system, [s.layers[finest] for s in sentences],
+                                 [s.excluded.get(finest, []) for s in sentences], gold.merge_numbers)
+        for layer in gold.layers[1:]:
+            scores.kept[layer] = count_boundaries(
+                lines, system, [layer_boundaries(s.text, s.layers[layer], gold.merge_numbers) for s in sentences])
+    if gold.bunsetsu:
+        scores.kept['bunsetsu'] = count_boundaries(lines, system, [s.boundaries for s in sentences])
+    return scores
+
+
+def gold_columns(gold: GoldSet, scores: GoldScores) -> list[tuple[str, float]]:
+    """The (column title, share) pairs of one row of a gold set's table."""
+    first = gold.layers[0]
+    if gold.hierarchy:
+        plural, attributive = gold.names[first]
+        columns = [(f'F1, {plural} [%]', scores.units[first].f1()),
+                   (f'Cuts at {attributive} boundaries [%]', scores.cuts.share())]
+        for layer in gold.layers[1:]:
+            plural, attributive = gold.names[layer]
+            columns += [(f'F1, {plural} [%]', scores.units[layer].f1()),
+                        (f'{attributive.capitalize()} boundaries kept [%]', scores.kept[layer].share())]
+    else:
+        counts = scores.units[first]
+        columns = [('Precision [%]', counts.precision()), ('Recall [%]', counts.recall()), ('F1 [%]', counts.f1())]
+        columns += [(f'F1, {gold.names[layer][0]} [%]', scores.units[layer].f1()) for layer in gold.layers[1:]]
+    if gold.bunsetsu:
+        columns.append(('Bunsetsu boundaries kept [%]', scores.kept['bunsetsu'].share()))
+    return columns
 
 
 def gold_tables(stats, gold_dir: str, segmentation_dir: str) -> list[str]:
     """The accuracy tables, one per gold set, every row of its language,
-    sorted by the F1 of UD's words. The tokens are in <segmentation dir>/ud."""
+    sorted by the F1 of the first layer. The tokens are in
+    <segmentation dir>/ud."""
     languages = series_languages(stats)
     out = []
     for gold in GOLD_SETS:
@@ -509,32 +613,23 @@ def gold_tables(stats, gold_dir: str, segmentation_dir: str) -> list[str]:
             if languages[name] != gold.language:
                 continue
             blocks = blocks_for(lines, os.path.join(segmentation_dir, 'ud', name + '.txt'))
-            results, boundaries = score_gold(gold, sentences, blocks)
-            for layer, counts in zip(gold.layers, results):
-                if counts.failures:
-                    print(f'{gold.key} {name} {layer}: {counts.failures} lines not aligned', file=sys.stderr)
-            if boundaries is not None and boundaries.failures:
-                print(f'{gold.key} {name} bunsetsu: {boundaries.failures} lines not aligned', file=sys.stderr)
-            rows.append((name, results, boundaries))
-        rows.sort(key=lambda row: -row[1][0].f1())
-        head = ['Tokenizer', 'Dictionary / Model', 'Precision [%]', 'Recall [%]', 'F1 [%]']
-        head += [f'F1, {LAYER_NAMES[layer]} [%]' for layer in gold.layers[1:]]
-        if gold.bunsetsu:
-            head.append('Bunsetsu boundaries kept [%]')
+            scores = score_gold(gold, sentences, blocks)
+            for count, failures in scores.failures().items():
+                print(f'{gold.key} {name} {count}: {failures} lines not aligned', file=sys.stderr)
+            merges = scores.units[gold.layers[0]].merges
+            if merges:
+                print(f'{gold.key} {name}: {merges} number merges', file=sys.stderr)
+            rows.append((name, scores))
+        rows.sort(key=lambda row: -row[1].units[gold.layers[0]].f1())
+        head = ['Tokenizer', 'Dictionary / Model'] + [title for title, _ in gold_columns(gold, rows[0][1])]
         out.append(f'#### {gold.title}')
         out.append('')
         out.append('| ' + ' | '.join(head) + ' |')
         out.append('| --- | --- |' + ' ---: |' * (len(head) - 2))
-        for name, results, boundaries in rows:
+        for name, scores in rows:
             tokenizer, dictionary = DISPLAY[name]
-            cells = [tokenizer, dictionary, percent(results[0].precision()),
-                     percent(results[0].recall()), percent(results[0].f1())]
-            cells += [percent(counts.f1()) for counts in results[1:]]
-            if boundaries is not None:
-                cells.append(percent(boundaries.share()))
+            cells = [tokenizer, dictionary] + [percent(share) for _, share in gold_columns(gold, scores)]
             out.append('| ' + ' | '.join(cells) + ' |')
-            if results[0].merges:
-                print(f'{gold.key} {name}: {results[0].merges} number merges', file=sys.stderr)
         out.append('')
     return out
 

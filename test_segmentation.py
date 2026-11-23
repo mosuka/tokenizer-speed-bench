@@ -227,26 +227,110 @@ class CountBoundariesTest(unittest.TestCase):
         self.assertEqual((counts.failures, counts.total), (1, 0))
 
 
+class CountCutsTest(unittest.TestCase):
+    def test_cuts_inside_units_are_not_matched(self):
+        counts = segmentation.count_cuts(['조약에'], [['조', '약', '에']], [[(0, 2), (2, 3)]], [[]], merge=False)
+        self.assertEqual((counts.matched, counts.total), (1, 2))
+        self.assertAlmostEqual(counts.share(), 0.5)
+
+    def test_digit_runs_are_merged_only_when_asked(self):
+        args = (['12年'], [['1', '2', '年']], [[(0, 2), (2, 3)]], [[]])
+        merged = segmentation.count_cuts(*args, merge=True)
+        self.assertEqual((merged.matched, merged.total), (1, 1))
+        unmerged = segmentation.count_cuts(*args, merge=False)
+        self.assertEqual((unmerged.matched, unmerged.total), (1, 2))
+
+    def test_excluded_ranges(self):
+        # 된다 has no morphemes: the cut inside it is not counted, and the cut
+        # at its edge is a gold boundary.
+        counts = segmentation.count_cuts(['된다 집'], [['된', '다', '집']], [[(3, 4)]], [[(0, 2)]], merge=False)
+        self.assertEqual((counts.matched, counts.total), (2, 2))
+
+    def test_edges_of_the_line_and_of_ignored_tokens(self):
+        # The line's ends are not cuts, and the row's cut between 、 and 。,
+        # which the gold data keeps together, is not counted: only the edges
+        # of 猫 and 犬 are.
+        counts = segmentation.count_cuts(['猫、。犬'], [['猫', '、', '。', '犬']], [[(0, 1), (1, 3), (3, 4)]], [[]],
+                                         merge=False)
+        self.assertEqual((counts.matched, counts.total), (2, 2))
+
+    def test_unaligned_lines_are_counted(self):
+        counts = segmentation.count_cuts(['猫'], [['犬']], [[(0, 1)]], [[]], merge=False)
+        self.assertEqual((counts.failures, counts.total), (1, 0))
+
+
+class LayerBoundariesTest(unittest.TestCase):
+    def test_the_start_of_every_unit_but_the_first(self):
+        self.assertEqual(segmentation.layer_boundaries('ab c', [(0, 1), (1, 2), (3, 4)], merge=False), [1, 3])
+
+    def test_digit_runs_are_merged_only_when_asked(self):
+        spans = [(0, 1), (1, 2), (2, 3)]
+        self.assertEqual(segmentation.layer_boundaries('12年', spans, merge=True), [2])
+        self.assertEqual(segmentation.layer_boundaries('12年', spans, merge=False), [1, 2])
+
+
+def gold_set(key):
+    return next(gold for gold in segmentation.GOLD_SETS if gold.key == key)
+
+
 class ScoreGoldTest(unittest.TestCase):
-    def test_each_layer_has_its_own_exclusion(self):
-        gold = segmentation.GoldSet('ko', 'Korean', 'ko', 'k.conllu', layers=('word', 'morpheme'), morphemes=True)
+    def test_korean_hierarchy(self):
+        gold = gold_set('ko-kaist')
         with tempfile.TemporaryDirectory() as d:
             sentences, _ = segmentation.read_conllu(write(d, gold.file, KOREAN), morphemes=True)
-        eojeols, morphemes = segmentation.score_gold(gold, sentences, [['이', '조약에', '의해', '영국은', '.']])[0]
+        scores = segmentation.score_gold(gold, sentences, [['이', '조', '약에', '의해', '영국은', '.']])
         # 의해 is scored as an eojeol (the period is ignored) but not as morphemes.
-        self.assertEqual((eojeols.correct, eojeols.gold), (4, 4))
-        self.assertEqual((morphemes.correct, morphemes.gold), (1, 5))
+        self.assertEqual((scores.units['word'].correct, scores.units['word'].gold), (3, 4))
+        self.assertEqual((scores.units['morpheme'].correct, scores.units['morpheme'].gold), (1, 5))
+        # Cuts 1 2 3 5 6 8 9 12: only 3 (inside 조약) is not a morpheme boundary.
+        self.assertEqual((scores.cuts.matched, scores.cuts.total), (7, 8))
+        self.assertEqual((scores.kept['word'].kept, scores.kept['word'].total), (4, 4))
+        self.assertNotIn('bunsetsu', scores.kept)
+        self.assertEqual(scores.failures(), {})
 
-    def test_bunsetsu_only_when_the_gold_set_has_them(self):
+    def test_japanese_hierarchy_and_bunsetsu(self):
+        gold = gold_set('ja-pud')
         with tempfile.TemporaryDirectory() as d:
-            sentences, _ = segmentation.read_conllu(write(d, 'j.conllu', JAPANESE))
-        tokens = [['国際連合', 'で', '猫を', '見た', '。']]
-        with_bunsetsu = segmentation.GoldSet('ja', 'Japanese', 'ja', 'j.conllu', layers=('word', 'luw'), bunsetsu=True)
-        results, boundaries = segmentation.score_gold(with_bunsetsu, sentences, tokens)
-        self.assertEqual((boundaries.kept, boundaries.total), (2, 2))
-        self.assertEqual([counts.correct for counts in results], [1, 2])
-        without = segmentation.GoldSet('ja', 'Japanese', 'ja', 'j.conllu')
-        self.assertIsNone(segmentation.score_gold(without, sentences, tokens)[1])
+            sentences, _ = segmentation.read_conllu(write(d, gold.file, JAPANESE))
+        scores = segmentation.score_gold(gold, sentences, [['国際連合で', '猫を', '見た', '。']])
+        self.assertEqual([scores.units[layer].correct for layer in gold.layers], [0, 0])
+        # The cuts 5 7 9 are short-unit boundaries; 国際連合で crosses the
+        # long-unit boundary 4 and 猫を the one at 6, 見た the one at 8.
+        self.assertEqual((scores.cuts.matched, scores.cuts.total), (3, 3))
+        self.assertEqual((scores.kept['luw'].kept, scores.kept['luw'].total), (3, 6))
+        self.assertEqual((scores.kept['bunsetsu'].kept, scores.kept['bunsetsu'].total), (2, 2))
+
+    def test_without_hierarchy(self):
+        gold = gold_set('en-pud')
+        with tempfile.TemporaryDirectory() as d:
+            sentences, _ = segmentation.read_conllu(write(d, gold.file, CONLLU))
+        scores = segmentation.score_gold(gold, sentences[:1], [['I', 'don', "'t", 'know', '.']])
+        self.assertIsNone(scores.cuts)
+        self.assertEqual(scores.kept, {})
+        self.assertEqual([scores.units[layer].correct for layer in gold.layers], [2, 2])
+
+
+class GoldColumnsTest(unittest.TestCase):
+    def titles(self, key):
+        gold = gold_set(key)
+        scores = segmentation.GoldScores({layer: segmentation.Counts() for layer in gold.layers},
+                                         segmentation.CutCounts(),
+                                         {layer: segmentation.BoundaryCounts()
+                                          for layer in list(gold.layers[1:]) + ['bunsetsu']})
+        return [title for title, _ in segmentation.gold_columns(gold, scores)]
+
+    def test_japanese(self):
+        self.assertEqual(self.titles('ja-pud'), [
+            'F1, short units [%]', 'Cuts at short-unit boundaries [%]', 'F1, long units [%]',
+            'Long-unit boundaries kept [%]', 'Bunsetsu boundaries kept [%]'])
+
+    def test_korean(self):
+        self.assertEqual(self.titles('ko-kaist'), [
+            'F1, morphemes [%]', 'Cuts at morpheme boundaries [%]', 'F1, eojeols [%]', 'Eojeol boundaries kept [%]'])
+
+    def test_english_and_chinese(self):
+        self.assertEqual(self.titles('en-pud'), ['Precision [%]', 'Recall [%]', 'F1 [%]', 'F1, tokens [%]'])
+        self.assertEqual(self.titles('zh-pud'), ['Precision [%]', 'Recall [%]', 'F1 [%]'])
 
 
 class BlocksForTest(unittest.TestCase):
@@ -277,9 +361,9 @@ class SeriesTest(unittest.TestCase):
         self.assertEqual(sorted(segmentation.TEXT_FILES), sorted(g.key for g in segmentation.GOLD_SETS))
         for gold in segmentation.GOLD_SETS:
             self.assertIn(gold.language, languages, gold.key)
-            self.assertEqual(gold.layers[0], 'word', gold.key)
-            for layer in gold.layers[1:]:
-                self.assertIn(layer, segmentation.LAYER_NAMES, gold.key)
+            named = gold.layers if gold.hierarchy else gold.layers[1:]
+            for layer in named:
+                self.assertIn(layer, gold.names, gold.key)
 
 
 if __name__ == '__main__':
