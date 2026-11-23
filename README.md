@@ -287,7 +287,10 @@ same tokens, as do `nori (Lucene)` and `alyze (nori)`, and `lindera` with
 `ko-dic` and `mecab-ko`. `lindera`'s `ipadic` is built from
 `mecab-ipadic-2.7.0-20250920`, a later archive of the IPADIC version that
 `mecab` reads (2.7.0-20070801); vibrato's release notes say that its
-`ipadic-mecab-2.7.0` is built from IPADIC v2.7.0.
+`ipadic-mecab-2.7.0` is built from IPADIC v2.7.0. `lindera`'s `sudachidict` is
+not compared with `sudachi`: it is SudachiDict 20260723 with the small, core
+and notcore lexicons and runs without Sudachi's split modes, while `sudachi`
+reads the 20261015 core dictionary in mode C.
 
 #### IPADIC (reference: mecab, ipadic 2.7.0)
 
@@ -333,116 +336,139 @@ same tokens, as do `nori (Lucene)` and `alyze (nori)`, and `lindera` with
 | --- | --- | ---: | ---: |
 | vaporetto | kytea jp-0.4.7-5.mod | 99.96 | 47 of 2,346 |
 
-### Accuracy against gold-standard data
+### Accuracy against Universal Dependencies
 
-The gold data are the test sets of the parallel Universal Dependencies
-treebanks
+The gold data are treebanks of [Universal Dependencies](https://universaldependencies.org/)
+(UD), release r2.19: the test sets of the parallel treebanks
 [UD_Japanese-PUD](https://github.com/UniversalDependencies/UD_Japanese-PUD),
-[UD_Korean-PUD](https://github.com/UniversalDependencies/UD_Korean-PUD),
 [UD_Chinese-PUD](https://github.com/UniversalDependencies/UD_Chinese-PUD) and
 [UD_English-PUD](https://github.com/UniversalDependencies/UD_English-PUD)
-(release r2.19, 1,000 sentences each, CC BY-SA 3.0), and, for Korean
-morphemes, the dev set of [KLUE-DP](https://github.com/KLUE-benchmark/KLUE)
-(v1.1.0, 2,000 sentences, CC BY-SA 4.0). `./download_resources.sh` fetches
-them; they are not part of this repository. None of them is in the training
-data of litsea's models (UD Japanese-GSD, Korean-GSD, Chinese-GSD and
-English-EWT) or of lindera's jieba dictionary (UD Chinese-GSD and GSDSimp).
+(1,000 sentences each, from news and Wikipedia, CC BY-SA 3.0), and the test
+set of [UD_Korean-Kaist](https://github.com/UniversalDependencies/UD_Korean-Kaist)
+(2,287 sentences of news, fiction and academic text, CC BY-SA 4.0).
+`./download_resources.sh` fetches them; they are not part of this repository.
+None of them is in the training data of litsea's models (UD Japanese-GSD,
+Korean-GSD, Chinese-GSD and English-EWT) or of lindera's jieba dictionary (UD
+Chinese-GSD and GSDSimp).
 
-Every row is scored against the gold data of its language, and the Standard
-column says whether the row segments by the standard of the gold data. For
-the rows marked "different", the score measures how far their units are from
-that standard, not how accurate they are.
+UD's units are syntactic words, and UD leaves the details of word
+segmentation to the documentation of each language (see UD's
+[tokenization guidelines](https://universaldependencies.org/u/overview/tokenization.html)).
+Every row is scored against the layers that the UD data of its language
+annotates, so that rows that segment by different standards are read against
+the same data: UD's words with precision, recall and F1, and the other layers
+with F1. A row that follows another standard than a layer scores low on that
+layer; the notes say which rows follow which standard. The rows are sorted by
+the F1 of UD's words.
 
-* Japanese: the gold data uses UniDic short units and concatenates cardinal
-  numbers into one word, so adjacent tokens made only of digits are merged on
-  both sides first. The UniDic rows and litsea follow short units. `kytea`
-  and `vaporetto` (the same KyTea model) also split conjugated words into stem
-  and ending, so they are marked "close". The IPADIC rows and
-  `rust-tinysegmenter` use IPADIC's units, the Sudachi rows mode C (the mode
-  for named entities) and `lindera`'s `sudachidict` the SudachiDict lexicon
-  without Sudachi's split modes, so they are marked "different".
-* Korean: UD_Korean-PUD has eojeols (the space-separated words), which litsea
-  outputs; the other rows output morphemes. KLUE-DP's morphemes, annotated by
-  Korean linguists following the TTA guidelines, are close to mecab-ko-dic's
-  but given as base forms: an eojeol whose morphemes do not concatenate back
-  to it (된 = 되 + ㄴ) is left out on both sides, which leaves 82.0 % of its
-  22,496 eojeols scored. The text of a KLUE-DP sentence is its eojeols joined
-  by spaces.
-* Chinese: UD_Chinese-PUD is in traditional script. litsea and `lindera`'s
-  `jieba` are trained on UD Chinese-GSD, which, like the PUD treebank, Google
-  annotated. CC-CEDICT gives words without a segmentation standard, and
-  smartcn is for simplified Chinese only.
-* English: the gold data splits contractions into words (do + n't). The F1
-  column scores these words; "F1, tokens" scores the unsplit tokens (don't),
-  which is how UAX #29 segments.
+* Japanese: UD Japanese is tokenized in three layers, as the Balanced Corpus
+  of Contemporary Written Japanese (BCCWJ) is: short units, long units and
+  bunsetsu (base phrases), as the
+  [UD_Japanese-GSD README](https://github.com/UniversalDependencies/UD_Japanese-GSD/blob/r2.19/README.md)
+  says.
+  * UD's words are short units with cardinal numbers concatenated into one
+    word, so adjacent tokens made only of digits are merged on both sides
+    first. The UniDic rows and litsea follow short units. `kytea` and
+    `vaporetto` (the same KyTea model) also split conjugated words into stem
+    and ending. The IPADIC rows and `rust-tinysegmenter` use IPADIC's units,
+    the Sudachi rows mode C (the mode for named entities) and `lindera`'s
+    `sudachidict` the SudachiDict lexicon without Sudachi's split modes.
+  * The long units are built from the MISC field `LUWBILabel` of each word;
+    they equal the words of
+    [UD_Japanese-PUDLUW](https://github.com/UniversalDependencies/UD_Japanese-PUDLUW),
+    the long-unit version of the same sentences. No row follows long units.
+  * Every bunsetsu boundary (MISC `BunsetuBILabel`) is also a boundary of
+    long and short units. "Bunsetsu boundaries kept" is the share of the 8,972
+    boundaries that no token of the row crosses; ignored tokens cross
+    nothing. Every row keeps at least 98.7 % of them, so the rows differ
+    mostly in how finely they split inside a bunsetsu. The tokens that cross
+    one are mostly multiword entries of IPADIC (役に立つ, として) and named
+    entities and idioms of `lindera`'s `sudachidict` (法の支配, トロイの木馬),
+    which join words of two bunsetsu.
+  * `lindera`'s `ipadic` scores higher than `mecab`'s, as lindera 7.0.0
+    breaks unknown words at `・` and the gold data splits katakana names
+    there (コリ・シューマン), while MeCab keeps such a name as one unknown
+    word, as IPADIC's `char.def` puts `・` in its katakana category. 104 of
+    the 106 places where `lindera` and `vibrato` segment differently are such
+    names.
+* Korean: the words of UD_Korean-Kaist are eojeols (the space-separated
+  words) with the punctuation split off, which litsea outputs; the other rows
+  output morphemes. The morphemes are the parts of each word's lemma split at
+  `+` (조약에 = 조약+에). They are base forms, so a word whose parts do not
+  concatenate back to it (의해 = 의하+어) is left out of the morpheme scores on
+  both sides, which leaves 23,517 of the 28,366 words (82.9 %) scored. The
+  sentences are not those of the PUD treebanks. UD_Korean-PUD is not used: it
+  splits the copula and some endings and compound nouns off eojeols
+  (수준이지만 = 수준 + 이지만), so only 69.4 % of its words that are not
+  punctuation are eojeols, and the others are not morphemes either.
+* Chinese: UD_Chinese-PUD is in traditional script and was annotated by
+  Google; UD's
+  [Chinese tokenization page](https://universaldependencies.org/zh/tokenization.html)
+  describes no segmentation standard for it. litsea and `lindera`'s `jieba`
+  are trained on UD Chinese-GSD, which Google also annotated. CC-CEDICT gives
+  words without a segmentation standard, and smartcn is for simplified
+  Chinese only.
+* English: UD's [English documentation](https://universaldependencies.org/en/index.html)
+  splits clitics (do + n't, 's) and most hyphenated words (search, -, engine)
+  into words, and keeps acronyms (U.S.) whole. The F1 column scores these
+  words; "F1, tokens" scores the unsplit tokens (don't), which is how UAX #29
+  segments.
 
-#### Japanese, UD_Japanese-PUD r2.19 (UniDic short units)
+#### Japanese, UD_Japanese-PUD r2.19 (short units, long units, bunsetsu)
 
-| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] |
-| --- | --- | --- | ---: | ---: | ---: |
-| vibrato | unidic-cwj-3.1.1 | same | 98.57 | 99.03 | 98.80 |
-| vibrato | unidic-cwj-3.1.1+compact-dual | same | 98.55 | 99.00 | 98.77 |
-| mecab | unidic-cwj-3.1.1 | same | 98.50 | 99.01 | 98.75 |
-| mecab | unidic-cwj-202512 | same | 97.95 | 98.98 | 98.46 |
-| lindera | unidic-cwj | same | 97.95 | 98.98 | 98.46 |
-| lindera | unidic | same | 97.78 | 98.94 | 98.36 |
-| lindera | unidic-csj | same | 97.70 | 98.76 | 98.23 |
-| litsea (japanese) | japanese.model | same | 97.51 | 97.64 | 97.57 |
-| litsea (japanese, two-stage) | japanese_pos.model | same | 97.42 | 97.60 | 97.51 |
-| vaporetto | kytea jp-0.4.7-5.mod | close | 81.02 | 89.09 | 84.87 |
-| kytea | jp-0.4.7-5.mod | close | 81.00 | 89.09 | 84.85 |
-| sudachi.rs | sudachi-dictionary-20261015-core | different | 96.28 | 93.12 | 94.68 |
-| sudachi | sudachi-dictionary-20261015-core | different | 96.11 | 92.77 | 94.41 |
-| lindera | ipadic | different | 94.99 | 91.88 | 93.41 |
-| kuromoji (Lucene) | ipadic (bundled) | different | 94.94 | 91.87 | 93.38 |
-| alyze (kuromoji) | ipadic (embedded) | different | 94.94 | 91.87 | 93.38 |
-| mecab | ipadic 2.7.0 | different | 94.61 | 91.05 | 92.80 |
-| vibrato | ipadic-mecab-2.7.0 | different | 94.61 | 91.05 | 92.80 |
-| kuromoji (Atilika) | ipadic (bundled) | different | 94.48 | 90.91 | 92.66 |
-| lindera | sudachidict | different | 94.26 | 90.02 | 92.09 |
-| rust-tinysegmenter | - | different | 92.11 | 89.24 | 90.66 |
+| Tokenizer | Dictionary / Model | Precision [%] | Recall [%] | F1 [%] | F1, long units [%] | Bunsetsu boundaries kept [%] |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| vibrato | unidic-cwj-3.1.1 | 98.57 | 99.03 | 98.80 | 67.39 | 99.97 |
+| vibrato | unidic-cwj-3.1.1+compact-dual | 98.55 | 99.00 | 98.77 | 67.40 | 99.97 |
+| mecab | unidic-cwj-3.1.1 | 98.50 | 99.01 | 98.75 | 67.37 | 99.97 |
+| mecab | unidic-cwj-202512 | 97.95 | 98.98 | 98.46 | 67.02 | 99.97 |
+| lindera | unidic-cwj | 97.95 | 98.98 | 98.46 | 67.02 | 99.97 |
+| lindera | unidic | 97.78 | 98.94 | 98.36 | 66.79 | 99.98 |
+| lindera | unidic-csj | 97.70 | 98.76 | 98.23 | 66.91 | 99.97 |
+| litsea (japanese) | japanese.model | 97.51 | 97.64 | 97.57 | 67.17 | 99.71 |
+| litsea (japanese, two-stage) | japanese_pos.model | 97.42 | 97.60 | 97.51 | 67.12 | 99.71 |
+| sudachi.rs | sudachi-dictionary-20261015-core | 96.28 | 93.12 | 94.68 | 71.50 | 99.94 |
+| sudachi | sudachi-dictionary-20261015-core | 96.11 | 92.77 | 94.41 | 71.59 | 99.94 |
+| lindera | ipadic | 94.99 | 91.88 | 93.41 | 70.18 | 99.45 |
+| kuromoji (Lucene) | ipadic (bundled) | 94.94 | 91.87 | 93.38 | 70.15 | 99.45 |
+| alyze (kuromoji) | ipadic (embedded) | 94.94 | 91.87 | 93.38 | 70.15 | 99.45 |
+| mecab | ipadic 2.7.0 | 94.61 | 91.05 | 92.80 | 70.70 | 99.45 |
+| vibrato | ipadic-mecab-2.7.0 | 94.61 | 91.05 | 92.80 | 70.70 | 99.45 |
+| kuromoji (Atilika) | ipadic (bundled) | 94.48 | 90.91 | 92.66 | 70.70 | 99.44 |
+| lindera | sudachidict | 94.26 | 90.02 | 92.09 | 72.84 | 99.78 |
+| rust-tinysegmenter | - | 92.11 | 89.24 | 90.66 | 68.55 | 98.74 |
+| vaporetto | kytea jp-0.4.7-5.mod | 81.02 | 89.09 | 84.87 | 57.27 | 99.89 |
+| kytea | jp-0.4.7-5.mod | 81.00 | 89.09 | 84.85 | 57.27 | 99.92 |
 
-#### Korean, UD_Korean-PUD r2.19 (eojeols)
+#### Korean, UD_Korean-Kaist r2.19 test (eojeols, morphemes)
 
-| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] |
-| --- | --- | --- | ---: | ---: | ---: |
-| litsea (korean, two-stage) | korean_pos.model | same | 82.50 | 69.28 | 75.32 |
-| litsea (korean) | korean.model | same | 82.50 | 69.28 | 75.31 |
-| mecab-ko | mecab-ko-dic 2.1.1-20180720 | different | 25.90 | 43.32 | 32.42 |
-| lindera | ko-dic | different | 25.90 | 43.32 | 32.42 |
-| nori (Lucene) | mecab-ko-dic (bundled) | different | 25.89 | 43.32 | 32.41 |
-| alyze (nori) | mecab-ko-dic (embedded) | different | 25.89 | 43.32 | 32.41 |
-| mecab | mecab-ko-dic 2.1.1-20180720 | different | 25.83 | 43.26 | 32.35 |
-
-#### Korean, KLUE-DP v1.1 dev (morphemes)
-
-| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] |
-| --- | --- | --- | ---: | ---: | ---: |
-| mecab-ko | mecab-ko-dic 2.1.1-20180720 | close | 91.91 | 93.08 | 92.49 |
-| lindera | ko-dic | close | 91.91 | 93.08 | 92.49 |
-| nori (Lucene) | mecab-ko-dic (bundled) | close | 91.90 | 93.09 | 92.49 |
-| alyze (nori) | mecab-ko-dic (embedded) | close | 91.90 | 93.09 | 92.49 |
-| mecab | mecab-ko-dic 2.1.1-20180720 | close | 91.67 | 92.91 | 92.29 |
-| litsea (korean, two-stage) | korean_pos.model | different | 35.54 | 19.12 | 24.86 |
-| litsea (korean) | korean.model | different | 35.51 | 19.10 | 24.84 |
+| Tokenizer | Dictionary / Model | Precision [%] | Recall [%] | F1 [%] | F1, morphemes [%] |
+| --- | --- | ---: | ---: | ---: | ---: |
+| litsea (korean) | korean.model | 99.99 | 100.00 | 99.99 | 18.15 |
+| litsea (korean, two-stage) | korean_pos.model | 99.99 | 100.00 | 99.99 | 18.15 |
+| nori (Lucene) | mecab-ko-dic (bundled) | 13.69 | 27.38 | 18.25 | 92.80 |
+| alyze (nori) | mecab-ko-dic (embedded) | 13.69 | 27.38 | 18.25 | 92.80 |
+| mecab | mecab-ko-dic 2.1.1-20180720 | 13.68 | 27.37 | 18.24 | 92.71 |
+| mecab-ko | mecab-ko-dic 2.1.1-20180720 | 13.68 | 27.37 | 18.24 | 92.79 |
+| lindera | ko-dic | 13.68 | 27.37 | 18.24 | 92.79 |
 
 #### Chinese, UD_Chinese-PUD r2.19 (traditional)
 
-| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] |
-| --- | --- | --- | ---: | ---: | ---: |
-| litsea (chinese) | chinese.model | same | 85.22 | 88.00 | 86.59 |
-| litsea (chinese, two-stage) | chinese_pos.model | same | 85.03 | 88.08 | 86.52 |
-| lindera | jieba | same | 82.53 | 88.80 | 85.55 |
-| lindera | cc-cedict | different | 79.37 | 81.69 | 80.51 |
-| alyze (smartcn) | smartcn (embedded) | different | 43.29 | 61.47 | 50.80 |
+| Tokenizer | Dictionary / Model | Precision [%] | Recall [%] | F1 [%] |
+| --- | --- | ---: | ---: | ---: |
+| litsea (chinese) | chinese.model | 85.22 | 88.00 | 86.59 |
+| litsea (chinese, two-stage) | chinese_pos.model | 85.03 | 88.08 | 86.52 |
+| lindera | jieba | 82.53 | 88.80 | 85.55 |
+| lindera | cc-cedict | 79.37 | 81.69 | 80.51 |
+| alyze (smartcn) | smartcn (embedded) | 43.29 | 61.47 | 50.80 |
 
 #### English, UD_English-PUD r2.19
 
-| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] | F1, tokens [%] |
-| --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (english, two-stage) | english_pos.model | same | 99.71 | 99.73 | 99.72 | 98.98 |
-| litsea (english) | english.model | same | 99.62 | 99.64 | 99.63 | 98.89 |
-| alyze (UAX #29) | - | different | 98.70 | 98.66 | 98.68 | 99.34 |
+| Tokenizer | Dictionary / Model | Precision [%] | Recall [%] | F1 [%] | F1, tokens [%] |
+| --- | --- | ---: | ---: | ---: | ---: |
+| litsea (english, two-stage) | english_pos.model | 99.71 | 99.73 | 99.72 | 98.98 |
+| litsea (english) | english.model | 99.62 | 99.64 | 99.63 | 98.89 |
+| alyze (UAX #29) | - | 98.70 | 98.66 | 98.68 | 99.34 |
 
 ## License
 

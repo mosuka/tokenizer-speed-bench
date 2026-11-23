@@ -136,11 +136,28 @@ CONLLU = """# sent_id = 1
 
 """
 
-KLUE = """## 칼럼명 : INDEX\tWORD_FORM\tLEMMA\tPOS\tHEAD\tDEPREL
-## klue-dp-v1_dev_00000_test\t유희열이 탈락에 흘렸다.
-1\t유희열이\t유희열 이\tNNP+JKS\t3\tNP_SBJ
-2\t탈락에\t탈락 에\tNNG+JKB\t3\tNP_AJT
-3\t흘렸다.\t흘리 었 다 .\tVV+EP+EF+SF\t0\tVP
+# UD Japanese: MISC marks the bunsetsu and long-unit boundaries of each word.
+JAPANESE = """# sent_id = 1
+# text = 国際連合で猫を見た。
+1\t国際\t国際\tNOUN\t_\t_\t3\tcompound\t_\tBunsetuBILabel=B|LUWBILabel=B|SpaceAfter=No
+2\t連合\t連合\tNOUN\t_\t_\t6\tobl\t_\tBunsetuBILabel=I|LUWBILabel=I|SpaceAfter=No
+3\tで\tで\tADP\t_\t_\t2\tcase\t_\tBunsetuBILabel=I|LUWBILabel=B|SpaceAfter=No
+4\t猫\t猫\tNOUN\t_\t_\t6\tobj\t_\tBunsetuBILabel=B|LUWBILabel=B|SpaceAfter=No
+5\tを\tを\tADP\t_\t_\t4\tcase\t_\tBunsetuBILabel=I|LUWBILabel=B|SpaceAfter=No
+6\t見\t見る\tVERB\t_\t_\t0\troot\t_\tBunsetuBILabel=B|LUWBILabel=B|SpaceAfter=No
+7\tた\tた\tAUX\t_\t_\t6\taux\t_\tBunsetuBILabel=I|LUWBILabel=B|SpaceAfter=No
+8\t。\t。\tPUNCT\t_\t_\t6\tpunct\t_\tBunsetuBILabel=I|LUWBILabel=B|SpaceAfter=No
+
+"""
+
+# UD_Korean-Kaist: each word is an eojeol, and its LEMMA gives its morphemes.
+KOREAN = """# sent_id = 1
+# text = 이 조약에 의해 영국은.
+1\t이\t이\tDET\t_\t_\t2\tdet\t_\t_
+2\t조약에\t조약+에\tADV\t_\t_\t3\tobl\t_\t_
+3\t의해\t의하+어\tSCONJ\t_\t_\t4\tadvcl\t_\t_
+4\t영국은\t영국+은\tPROPN\t_\t_\t0\troot\t_\tSpaceAfter=No
+5\t.\t.\tPUNCT\t_\t_\t4\tpunct\t_\t_
 
 """
 
@@ -156,23 +173,80 @@ class ReadersTest(unittest.TestCase):
         # vamos + nos are not substrings of vámonos: kept whole and counted.
         self.assertEqual(sentences[1].layers['word'], [(0, 7)])
         self.assertEqual(unsplit, 1)
+        # Without the MISC fields or morphemes, no other layer is built.
+        self.assertEqual(sorted(first.layers), ['token', 'word'])
+        self.assertEqual((first.boundaries, first.excluded), ([], {}))
 
-    def test_klue_contractions_are_excluded(self):
+    def test_japanese_long_units_and_bunsetsu_boundaries(self):
         with tempfile.TemporaryDirectory() as d:
-            sentences, eojeols, scored = segmentation.read_klue(write(d, 'k.tsv', KLUE))
+            sentences, _ = segmentation.read_conllu(write(d, 'j.conllu', JAPANESE))
         sentence = sentences[0]
-        self.assertEqual(sentence.text, '유희열이 탈락에 흘렸다.')
-        self.assertEqual([sentence.text[s:e] for s, e in sentence.layers['word']], ['유희열', '이', '탈락', '에'])
-        self.assertEqual(sentence.excluded, [(9, 13)])
-        self.assertEqual((eojeols, scored), (3, 2))
+        self.assertEqual([sentence.text[s:e] for s, e in sentence.layers['word']],
+                         ['国際', '連合', 'で', '猫', 'を', '見', 'た', '。'])
+        self.assertEqual([sentence.text[s:e] for s, e in sentence.layers['luw']],
+                         ['国際連合', 'で', '猫', 'を', '見', 'た', '。'])
+        # 猫 and 見 start a bunsetsu; the first word is not a boundary.
+        self.assertEqual(sentence.boundaries, [5, 7])
 
-    def test_klue_text_is_the_joined_forms(self):
-        # The sentence line has a curly quote where the form has an ASCII one.
-        tsv = KLUE.replace('\t유희열이 탈락에 흘렸다.\n', "\t'유희열’이 탈락에 흘렸다.\n").replace(
-            '1\t유희열이\t유희열 이\t', "1\t'유희열'이\t' 유희열 ' 이\t")
+    def test_korean_morphemes_exclude_only_from_their_layer(self):
         with tempfile.TemporaryDirectory() as d:
-            sentences, _, _ = segmentation.read_klue(write(d, 'k.tsv', tsv))
-        self.assertEqual(sentences[0].text, "'유희열'이 탈락에 흘렸다.")
+            sentences, _ = segmentation.read_conllu(write(d, 'k.conllu', KOREAN), morphemes=True)
+        sentence = sentences[0]
+        self.assertEqual([sentence.text[s:e] for s, e in sentence.layers['word']],
+                         ['이', '조약에', '의해', '영국은', '.'])
+        self.assertEqual([sentence.text[s:e] for s, e in sentence.layers['morpheme']],
+                         ['이', '조약', '에', '영국', '은', '.'])
+        # 의하 + 어 does not concatenate back to 의해.
+        self.assertEqual(sentence.excluded, {'morpheme': [(6, 8)]})
+
+    def test_morphemes_only_when_asked(self):
+        with tempfile.TemporaryDirectory() as d:
+            sentences, _ = segmentation.read_conllu(write(d, 'k.conllu', KOREAN))
+        self.assertNotIn('morpheme', sentences[0].layers)
+
+
+class CountBoundariesTest(unittest.TestCase):
+    def test_dropped_punctuation_keeps_the_boundary(self):
+        # The bunsetsu 「犬」 starts at 3; a row that drops 、 and 「 has no
+        # token ending or starting there, but no token crosses it.
+        counts = segmentation.count_boundaries(['猫だ、「犬」'], [['猫', 'だ', '犬']], [[3]])
+        self.assertEqual((counts.kept, counts.total), (1, 1))
+
+    def test_a_crossing_token_loses_the_boundary(self):
+        counts = segmentation.count_boundaries(['役に立つ', '役に立つ'], [['役に立つ'], ['役', 'に', '立つ']],
+                                               [[2], [2]])
+        self.assertEqual((counts.kept, counts.total), (1, 2))
+        self.assertAlmostEqual(counts.share(), 0.5)
+
+    def test_an_ignored_token_crosses_nothing(self):
+        counts = segmentation.count_boundaries(['猫、「犬'], [['猫', '、「', '犬']], [[2]])
+        self.assertEqual((counts.kept, counts.total), (1, 1))
+
+    def test_unaligned_lines_are_counted(self):
+        counts = segmentation.count_boundaries(['猫'], [['犬']], [[]])
+        self.assertEqual((counts.failures, counts.total), (1, 0))
+
+
+class ScoreGoldTest(unittest.TestCase):
+    def test_each_layer_has_its_own_exclusion(self):
+        gold = segmentation.GoldSet('ko', 'Korean', 'ko', 'k.conllu', layers=('word', 'morpheme'), morphemes=True)
+        with tempfile.TemporaryDirectory() as d:
+            sentences, _ = segmentation.read_conllu(write(d, gold.file, KOREAN), morphemes=True)
+        eojeols, morphemes = segmentation.score_gold(gold, sentences, [['이', '조약에', '의해', '영국은', '.']])[0]
+        # 의해 is scored as an eojeol (the period is ignored) but not as morphemes.
+        self.assertEqual((eojeols.correct, eojeols.gold), (4, 4))
+        self.assertEqual((morphemes.correct, morphemes.gold), (1, 5))
+
+    def test_bunsetsu_only_when_the_gold_set_has_them(self):
+        with tempfile.TemporaryDirectory() as d:
+            sentences, _ = segmentation.read_conllu(write(d, 'j.conllu', JAPANESE))
+        tokens = [['国際連合', 'で', '猫を', '見た', '。']]
+        with_bunsetsu = segmentation.GoldSet('ja', 'Japanese', 'ja', 'j.conllu', layers=('word', 'luw'), bunsetsu=True)
+        results, boundaries = segmentation.score_gold(with_bunsetsu, sentences, tokens)
+        self.assertEqual((boundaries.kept, boundaries.total), (2, 2))
+        self.assertEqual([counts.correct for counts in results], [1, 2])
+        without = segmentation.GoldSet('ja', 'Japanese', 'ja', 'j.conllu')
+        self.assertIsNone(segmentation.score_gold(without, sentences, tokens)[1])
 
 
 class BlocksForTest(unittest.TestCase):
@@ -197,9 +271,15 @@ class SeriesTest(unittest.TestCase):
         for _, reference, others in segmentation.AGREEMENT_GROUPS:
             for name in [reference] + others:
                 self.assertIn(name, languages)
+
+    def test_every_gold_set_has_rows_a_text_file_and_column_names(self):
+        languages = set(segmentation.series_languages(segmentation.load_stats()).values())
+        self.assertEqual(sorted(segmentation.TEXT_FILES), sorted(g.key for g in segmentation.GOLD_SETS))
         for gold in segmentation.GOLD_SETS:
-            for name in gold.same | gold.close:
-                self.assertEqual(languages[name], gold.language, name)
+            self.assertIn(gold.language, languages, gold.key)
+            self.assertEqual(gold.layers[0], 'word', gold.key)
+            for layer in gold.layers[1:]:
+                self.assertIn(layer, segmentation.LAYER_NAMES, gold.key)
 
 
 if __name__ == '__main__':

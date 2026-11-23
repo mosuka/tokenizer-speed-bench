@@ -53,10 +53,11 @@ if [ ! -d "./mecab-ko-dic-2.1.1-20180720" ]; then
     tar -xzf "./mecab-ko-dic-2.1.1-20180720.tar.gz"
 fi
 
-# Gold-standard data for segmentation.py (see segment_all.sh): the parallel UD
-# treebanks (PUD) of the four languages at UD's tag r2.19, under CC BY-SA 3.0,
-# and the KLUE-DP dev set at KLUE's tag v1.1.0, under CC BY-SA 4.0. They are
-# fetched here rather than committed, and checked against their SHA-256.
+# Gold-standard data for segmentation.py (see segment_all.sh), all at UD's tag
+# r2.19: the parallel UD treebanks (PUD) of Japanese, Chinese and English,
+# under CC BY-SA 3.0, and the test set of UD_Korean-Kaist, under CC BY-SA 4.0.
+# They are fetched here rather than committed, and checked against their
+# SHA-256.
 mkdir -p "./gold"
 fetch_gold() {
     local url="$1" sum="$2"
@@ -67,10 +68,9 @@ fetch_gold() {
     fi
 }
 fetch_gold "https://raw.githubusercontent.com/UniversalDependencies/UD_Japanese-PUD/r2.19/ja_pud-ud-test.conllu" 7ac51383189bdf5513102f9f8ac7ee1b967d5449f8c2dc1a9108fa21a8f1a688
-fetch_gold "https://raw.githubusercontent.com/UniversalDependencies/UD_Korean-PUD/r2.19/ko_pud-ud-test.conllu" d7d8a74456d20be87d596c20241ca3b1c030ced20c081a5095a40673a4fa57ab
+fetch_gold "https://raw.githubusercontent.com/UniversalDependencies/UD_Korean-Kaist/r2.19/ko_kaist-ud-test.conllu" b4134e421b74791df11d07da9fd19873ac2682c192214e81f47f9b2fa0b56892
 fetch_gold "https://raw.githubusercontent.com/UniversalDependencies/UD_Chinese-PUD/r2.19/zh_pud-ud-test.conllu" 38ad4f76224567a275f3492a87a9b7ed91690b8f0959ee4eabac0ae022d6cf41
 fetch_gold "https://raw.githubusercontent.com/UniversalDependencies/UD_English-PUD/r2.19/en_pud-ud-test.conllu" befc5e901b58732f2308b1aac5cdd804d938362ab31c9fe400c61c28e8e155d8
-fetch_gold "https://raw.githubusercontent.com/KLUE-benchmark/KLUE/v1.1.0/klue_benchmark/klue-dp-v1.1/klue-dp-v1.1_dev.tsv" eb0d8532c0234934e058db0d31f2b01f093128715d6ae51f534a448434a48f01
 
 if [ ! -f "./wagahaiwa_nekodearu.txt" ]; then
     wget "https://raw.githubusercontent.com/mosuka/litsea/v0.16.0/resources/wagahaiwa_nekodearu.txt" -O "./wagahaiwa_nekodearu.txt"

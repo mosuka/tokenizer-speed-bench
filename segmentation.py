@@ -8,20 +8,24 @@ and scores them in two ways:
 
 - agreement: each row against the reference implementation of the same
   dictionary or model, on the speed corpora (AGREEMENT_GROUPS);
-- accuracy: each row against gold-standard data of its language (GOLD_SETS).
+- accuracy: each row against the layers of the Universal Dependencies (UD)
+  gold data of its language (GOLD_SETS): UD's words, and for Japanese long
+  units and bunsetsu boundaries, for Korean morphemes, for English the
+  surface tokens.
 
 A token counts as correct when its span equals a span of the other side.
 Tokens whose first character is whitespace, punctuation, a symbol or a
 control character are dropped from both sides first, as Lucene's kuromoji
 and nori drop them, so that rows that discard punctuation can be compared
-with rows that keep it.
+with rows that keep it. A bunsetsu boundary counts as kept when no scored
+token crosses it.
 
 Usage (from the repository root):
   segmentation.py text <gold dir> <output dir>
       Write the sentences of each gold set, one per line, as bench input.
   segmentation.py report <gold dir> <segmentation dir>
       Print the agreement and accuracy tables in Markdown. The segmentation
-      directory holds corpus/, pud/ and klue/, one tokens file per series
+      directory holds corpus/ and ud/, one tokens file per series
       (segment_all.sh writes them).
 """
 
@@ -158,20 +162,46 @@ class Counts:
 
 
 @dataclasses.dataclass
+class BoundaryCounts:
+    """Counts of the gold boundaries that no scored token crosses."""
+
+    kept: int = 0
+    total: int = 0
+    failures: int = 0
+
+    def share(self) -> float:
+        return self.kept / self.total if self.total else 0.0
+
+
+@dataclasses.dataclass
 class Sentence:
-    """A gold sentence: its text, its gold spans per layer, and the ranges
-    excluded from scoring."""
+    """A gold sentence: its text, its gold spans per layer, the ranges each
+    layer excludes from scoring, and the positions where a bunsetsu starts
+    (other than the first)."""
 
     text: str
     layers: dict[str, list[tuple[int, int]]]
-    excluded: list[tuple[int, int]] = dataclasses.field(default_factory=list)
+    excluded: dict[str, list[tuple[int, int]]] = dataclasses.field(default_factory=dict)
+    boundaries: list[int] = dataclasses.field(default_factory=list)
 
 
-def read_conllu(path: str) -> tuple[list[Sentence], int]:
+def misc_fields(cols: list[str]) -> dict[str, str]:
+    """The Name=Value items of a CoNLL-U word line's MISC column."""
+    return dict(item.split('=', 1) for item in cols[9].split('|') if '=' in item)
+
+
+def read_conllu(path: str, morphemes: bool = False) -> tuple[list[Sentence], int]:
     """Read a CoNLL-U file into sentences with a 'word' and a 'token' layer.
 
     The token layer has the surface tokens (a multi-word token such as
     "don't" once); the word layer has the syntactic words ("do", "n't").
+    When every word has MISC LUWBILabel (UD Japanese), a 'luw' layer joins
+    each word labelled I (inside a long unit) to the one before it; when
+    every word has MISC BunsetuBILabel, the sentence's boundaries are the
+    starts of the words labelled B, except the first word. With morphemes
+    (UD_Korean-Kaist), a 'morpheme' layer splits each word's LEMMA at "+"
+    (조약에: 조약+에); a word whose parts do not concatenate back to it (의해:
+    의하+어) is excluded from the morpheme layer only.
     Returns the sentences and the number of multi-word tokens whose words are
     not substrings of the token, which are kept whole in the word layer.
     """
@@ -184,7 +214,7 @@ def read_conllu(path: str) -> tuple[list[Sentence], int]:
         nonlocal text, rows, unsplit
         if text is None:
             return
-        tokens = []  # (form, [word forms]) per surface token
+        tokens = []  # (form, [word lines]) per surface token
         words_in_range = 0
         for cols in rows:
             ident, form = cols[0], cols[1]
@@ -195,19 +225,42 @@ def read_conllu(path: str) -> tuple[list[Sentence], int]:
                 tokens.append((form, []))
                 words_in_range = last - first + 1
             elif words_in_range:
-                tokens[-1][1].append(form)
+                tokens[-1][1].append(cols)
                 words_in_range -= 1
             else:
-                tokens.append((form, [form]))
+                tokens.append((form, [cols]))
         token_spans = align(text, [form for form, _ in tokens])
-        word_spans = []
-        for (form, words), (start, end) in zip(tokens, token_spans):
+        words = []  # (span, word line); an unsplit token keeps its first word line
+        for (form, word_lines), (start, end) in zip(tokens, token_spans):
             try:
-                word_spans.extend(align(text[start:end], words, start))
+                words.extend(zip(align(text[start:end], [cols[1] for cols in word_lines], start), word_lines))
             except AlignmentError:
-                word_spans.append((start, end))
+                words.append(((start, end), word_lines[0]))
                 unsplit += 1
-        sentences.append(Sentence(text, {'token': token_spans, 'word': word_spans}))
+        sentence = Sentence(text, {'token': token_spans, 'word': [span for span, _ in words]})
+        fields = [misc_fields(cols) for _, cols in words]
+        if words and all('LUWBILabel' in item for item in fields):
+            luw: list[tuple[int, int]] = []
+            for (start, end), item in zip(sentence.layers['word'], fields):
+                if item['LUWBILabel'] == 'I' and luw:
+                    luw[-1] = (luw[-1][0], end)
+                else:
+                    luw.append((start, end))
+            sentence.layers['luw'] = luw
+        if words and all('BunsetuBILabel' in item for item in fields):
+            sentence.boundaries = [start for (start, _), item in zip(sentence.layers['word'][1:], fields[1:])
+                                   if item['BunsetuBILabel'] == 'B']
+        if morphemes:
+            spans, excluded = [], []
+            for (start, end), cols in words:
+                parts = cols[2].split('+')
+                if '' not in parts and ''.join(parts) == cols[1]:
+                    spans.extend(align(cols[1], parts, start))
+                else:
+                    excluded.append((start, end))
+            sentence.layers['morpheme'] = spans
+            sentence.excluded['morpheme'] = excluded
+        sentences.append(sentence)
         text = None
         rows = []
 
@@ -222,57 +275,6 @@ def read_conllu(path: str) -> tuple[list[Sentence], int]:
                 rows.append(line.split('\t'))
     flush()
     return sentences, unsplit
-
-
-def read_klue(path: str) -> tuple[list[Sentence], int, int]:
-    """Read KLUE-DP's TSV into sentences with a 'word' layer of morphemes.
-
-    KLUE-DP gives each eojeol's morphemes as base forms. When they do not
-    concatenate back to the eojeol (contractions such as 된 = 되 + ㄴ), the
-    eojeol is excluded from scoring. The sentence is the eojeol forms joined
-    by spaces, the text that was annotated; the "## klue-dp" line differs
-    from it in a few sentences (6 of the 2,000 in dev: digits and a quote).
-    Returns the sentences, the number of eojeols and the number of eojeols
-    scored.
-    """
-    sentences = []
-    eojeols = scored = 0
-    text = None
-    rows: list[list[str]] = []
-
-    def flush():
-        nonlocal text, rows, eojeols, scored
-        if text is None:
-            return
-        forms = [cols[1] for cols in rows]
-        text = ' '.join(forms)
-        spans = []
-        excluded = []
-        for cols, (start, end) in zip(rows, align(text, forms)):
-            eojeols += 1
-            morphemes = cols[2].split(' ')
-            if ''.join(morphemes) == cols[1]:
-                spans.extend(align(cols[1], morphemes, start))
-                scored += 1
-            else:
-                excluded.append((start, end))
-        sentences.append(Sentence(text, {'word': spans}, excluded))
-        text = None
-        rows = []
-
-    with open(path, encoding='utf-8') as fp:
-        for raw in fp:
-            line = raw.rstrip('\n')
-            if line.startswith('## klue-dp'):
-                text = line.split('\t', 1)[1]
-            elif line.startswith('##'):
-                continue
-            elif line == '':
-                flush()
-            else:
-                rows.append(line.split('\t'))
-    flush()
-    return sentences, eojeols, scored
 
 
 def load_stats():
@@ -340,41 +342,38 @@ AGREEMENT_GROUPS = [
 
 @dataclasses.dataclass
 class GoldSet:
-    """Gold data for one language, and how each row's standard relates to it."""
+    """UD gold data for one language and the layers it is scored by.
+
+    The first layer is UD's words, given with precision, recall and F1; the
+    other layers are given with F1. With bunsetsu, the share of bunsetsu
+    boundaries kept is given too.
+    """
 
     key: str
     title: str
     language: str
     file: str
-    run: str
-    same: frozenset
-    close: frozenset = frozenset()
     layers: tuple = ('word',)
+    morphemes: bool = False
+    bunsetsu: bool = False
     merge_numbers: bool = False
 
 
+# Layer -> the name in an "F1, <name> [%]" column.
+LAYER_NAMES = {'luw': 'long units', 'morpheme': 'morphemes', 'token': 'tokens'}
+
 GOLD_SETS = [
-    GoldSet('ja-pud', 'Japanese, UD_Japanese-PUD r2.19 (UniDic short units)', 'ja', 'ja_pud-ud-test.conllu', 'pud',
-            same=frozenset({'mecab-unidic-3_1_1', 'mecab-unidic-202512', 'vibrato-unidic-cwj-3_1_1',
-                            'vibrato-unidic-cwj-3_1_1+compact-dual', 'lindera-unidic', 'lindera-unidic-cwj',
-                            'lindera-unidic-csj', 'litsea-japanese', 'litsea-japanese-two-stage'}),
-            close=frozenset({'kytea', 'vaporetto'}), merge_numbers=True),
-    GoldSet('ko-pud', 'Korean, UD_Korean-PUD r2.19 (eojeols)', 'ko', 'ko_pud-ud-test.conllu', 'pud',
-            same=frozenset({'litsea-korean', 'litsea-korean-two-stage'})),
-    GoldSet('ko-klue', 'Korean, KLUE-DP v1.1 dev (morphemes)', 'ko', 'klue-dp-v1.1_dev.tsv', 'klue',
-            same=frozenset(),
-            close=frozenset({'mecab-ko-ko-dic-2_1_1', 'mecab-ko-dic-2_1_1', 'lindera-ko-dic', 'lucene-nori',
-                             'alyze-nori'})),
-    GoldSet('zh-pud', 'Chinese, UD_Chinese-PUD r2.19 (traditional)', 'zh', 'zh_pud-ud-test.conllu', 'pud',
-            same=frozenset({'litsea-chinese', 'litsea-chinese-two-stage', 'lindera-jieba'})),
-    GoldSet('en-pud', 'English, UD_English-PUD r2.19', 'en', 'en_pud-ud-test.conllu', 'pud',
-            same=frozenset({'litsea-english', 'litsea-english-two-stage'}), layers=('word', 'token')),
+    GoldSet('ja-pud', 'Japanese, UD_Japanese-PUD r2.19 (short units, long units, bunsetsu)', 'ja',
+            'ja_pud-ud-test.conllu', layers=('word', 'luw'), bunsetsu=True, merge_numbers=True),
+    GoldSet('ko-kaist', 'Korean, UD_Korean-Kaist r2.19 test (eojeols, morphemes)', 'ko',
+            'ko_kaist-ud-test.conllu', layers=('word', 'morpheme'), morphemes=True),
+    GoldSet('zh-pud', 'Chinese, UD_Chinese-PUD r2.19 (traditional)', 'zh', 'zh_pud-ud-test.conllu'),
+    GoldSet('en-pud', 'English, UD_English-PUD r2.19', 'en', 'en_pud-ud-test.conllu', layers=('word', 'token')),
 ]
 
 TEXT_FILES = {
     'ja-pud': 'ja_pud.txt',
-    'ko-pud': 'ko_pud.txt',
-    'ko-klue': 'klue_dp_dev.txt',
+    'ko-kaist': 'ko_kaist.txt',
     'zh-pud': 'zh_pud.txt',
     'en-pud': 'en_pud.txt',
 }
@@ -382,12 +381,14 @@ TEXT_FILES = {
 
 def read_gold(gold_dir: str, gold: GoldSet) -> tuple[list[Sentence], str]:
     """Read a gold set; returns its sentences and a note on what was adjusted."""
-    path = os.path.join(gold_dir, gold.file)
-    if gold.file.endswith('.conllu'):
-        sentences, unsplit = read_conllu(path)
-        return sentences, f'{unsplit} multi-word tokens kept whole in the word layer'
-    sentences, eojeols, scored = read_klue(path)
-    return sentences, f'{scored} of {eojeols} eojeols ({100 * scored / eojeols:.1f} %) scored'
+    sentences, unsplit = read_conllu(os.path.join(gold_dir, gold.file), morphemes=gold.morphemes)
+    notes = [f'{unsplit} multi-word tokens kept whole in the word layer']
+    if gold.morphemes:
+        words = sum(len(sentence.layers['word']) for sentence in sentences)
+        excluded = sum(len(sentence.excluded['morpheme']) for sentence in sentences)
+        notes.append(f'{words - excluded} of {words} words ({100 * (words - excluded) / words:.1f} %) '
+                     'scored for morphemes')
+    return sentences, '; '.join(notes)
 
 
 def series_languages(stats) -> dict[str, str]:
@@ -434,6 +435,23 @@ def score_against(lines: list[str], system: list[list[str]], gold: list[list[tup
     return counts
 
 
+def count_boundaries(lines: list[str], system: list[list[str]], boundaries: list[list[int]]) -> BoundaryCounts:
+    """Count the gold boundaries that no scored system token crosses, line by
+    line. Ignored tokens cross nothing, so a row that drops punctuation keeps
+    the boundaries next to the punctuation it drops."""
+    counts = BoundaryCounts()
+    for line, tokens, positions in zip(lines, system, boundaries):
+        try:
+            spans = align(line, tokens)
+        except AlignmentError:
+            counts.failures += 1
+            continue
+        kept = scored_spans(line, spans, [])
+        counts.total += len(positions)
+        counts.kept += sum(1 for position in positions if not any(s < position < e for s, e in kept))
+    return counts
+
+
 def percent(value: float) -> str:
     return f'{100 * value:.2f}'
 
@@ -464,44 +482,56 @@ def agreement_tables(stats, segmentation_dir: str) -> list[str]:
     return out
 
 
+def score_gold(gold: GoldSet, sentences: list[Sentence],
+               system: list[list[str]]) -> tuple[list[Counts], BoundaryCounts | None]:
+    """Score one row's tokens against each layer of a gold set, each layer
+    with its own excluded ranges, and count the bunsetsu boundaries kept
+    (None when the gold set has none)."""
+    lines = [sentence.text for sentence in sentences]
+    results = [score_against(lines, system, [s.layers[layer] for s in sentences],
+                             [s.excluded.get(layer, []) for s in sentences], gold.merge_numbers)
+               for layer in gold.layers]
+    boundaries = count_boundaries(lines, system, [s.boundaries for s in sentences]) if gold.bunsetsu else None
+    return results, boundaries
+
+
 def gold_tables(stats, gold_dir: str, segmentation_dir: str) -> list[str]:
-    """The accuracy tables, one per gold set, every row of its language."""
+    """The accuracy tables, one per gold set, every row of its language,
+    sorted by the F1 of UD's words. The tokens are in <segmentation dir>/ud."""
     languages = series_languages(stats)
     out = []
     for gold in GOLD_SETS:
         sentences, note = read_gold(gold_dir, gold)
         print(f'{gold.key}: {len(sentences)} sentences; {note}', file=sys.stderr)
         lines = [sentence.text for sentence in sentences]
-        excluded = [sentence.excluded for sentence in sentences]
         rows = []
         for name, _, _ in stats.RE_DICT:
             if languages[name] != gold.language:
                 continue
-            blocks = blocks_for(lines, os.path.join(segmentation_dir, gold.run, name + '.txt'))
-            results = []
-            for layer in gold.layers:
-                counts = score_against(lines, blocks, [s.layers[layer] for s in sentences], excluded,
-                                       gold.merge_numbers)
+            blocks = blocks_for(lines, os.path.join(segmentation_dir, 'ud', name + '.txt'))
+            results, boundaries = score_gold(gold, sentences, blocks)
+            for layer, counts in zip(gold.layers, results):
                 if counts.failures:
-                    print(f'{gold.key} {name}: {counts.failures} lines not aligned', file=sys.stderr)
-                results.append(counts)
-            standard = 'same' if name in gold.same else 'close' if name in gold.close else 'different'
-            rows.append((standard, name, results))
-        order = {'same': 0, 'close': 1, 'different': 2}
-        rows.sort(key=lambda row: (order[row[0]], -row[2][0].f1()))
+                    print(f'{gold.key} {name} {layer}: {counts.failures} lines not aligned', file=sys.stderr)
+            if boundaries is not None and boundaries.failures:
+                print(f'{gold.key} {name} bunsetsu: {boundaries.failures} lines not aligned', file=sys.stderr)
+            rows.append((name, results, boundaries))
+        rows.sort(key=lambda row: -row[1][0].f1())
+        head = ['Tokenizer', 'Dictionary / Model', 'Precision [%]', 'Recall [%]', 'F1 [%]']
+        head += [f'F1, {LAYER_NAMES[layer]} [%]' for layer in gold.layers[1:]]
+        if gold.bunsetsu:
+            head.append('Bunsetsu boundaries kept [%]')
         out.append(f'#### {gold.title}')
         out.append('')
-        if gold.layers == ('word', 'token'):
-            out.append('| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] | F1, tokens [%] |')
-            out.append('| --- | --- | --- | ---: | ---: | ---: | ---: |')
-        else:
-            out.append('| Tokenizer | Dictionary / Model | Standard | Precision [%] | Recall [%] | F1 [%] |')
-            out.append('| --- | --- | --- | ---: | ---: | ---: |')
-        for standard, name, results in rows:
+        out.append('| ' + ' | '.join(head) + ' |')
+        out.append('| --- | --- |' + ' ---: |' * (len(head) - 2))
+        for name, results, boundaries in rows:
             tokenizer, dictionary = DISPLAY[name]
-            cells = [tokenizer, dictionary, standard, percent(results[0].precision()),
+            cells = [tokenizer, dictionary, percent(results[0].precision()),
                      percent(results[0].recall()), percent(results[0].f1())]
             cells += [percent(counts.f1()) for counts in results[1:]]
+            if boundaries is not None:
+                cells.append(percent(boundaries.share()))
             out.append('| ' + ' | '.join(cells) + ' |')
             if results[0].merges:
                 print(f'{gold.key} {name}: {results[0].merges} number merges', file=sys.stderr)
