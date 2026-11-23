@@ -8,7 +8,19 @@ use sudachi::dic::dictionary::JapaneseDictionary;
 use sudachi::dic::subset::InfoSubset;
 use sudachi::prelude::*;
 
+/// The split mode from the first argument (A, B or C; C when it is left out),
+/// and the name of the series it gives, as run_all.sh and stats.py use it.
+fn split_mode() -> (Mode, &'static str) {
+    match std::env::args().nth(1).as_deref() {
+        Some("A") => (Mode::A, "sudachi.rs-a"),
+        Some("B") => (Mode::B, "sudachi.rs-b"),
+        Some("C") | None => (Mode::C, "sudachi.rs-c"),
+        Some(other) => panic!("unknown split mode {other:?}: use A, B or C"),
+    }
+}
+
 fn main() {
+    let (mode, series) = split_mode();
     let config = Config::new(
         None,
         None,
@@ -18,7 +30,9 @@ fn main() {
     )
     .unwrap();
     let dict = JapaneseDictionary::from_cfg(&config).unwrap();
-    let mut tokenizer = StatefulTokenizer::new(&dict, Mode::C);
+    let mut tokenizer = StatefulTokenizer::new(&dict, mode);
+    // The subset always keeps what the mode needs (the split information of
+    // modes A and B), see StatefulTokenizer::set_subset.
     tokenizer.set_subset(InfoSubset::empty());
     let mut morphemes = MorphemeList::empty(&dict);
     let lines: Vec<_> = std::io::stdin()
@@ -37,7 +51,7 @@ fn main() {
     }
     let duration = start.elapsed();
 
-    println!("Elapsed-sudachi.rs: {} [sec]", duration.as_secs_f64());
+    println!("Elapsed-{}: {} [sec]", series, duration.as_secs_f64());
 
     dbg!(n_words);
 

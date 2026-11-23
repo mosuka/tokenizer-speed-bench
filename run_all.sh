@@ -102,11 +102,16 @@ do
 
     measure_rss "lindera-ko-dic" ./bench/lindera-ko-dic-bench/target/release/lindera-ko-dic-bench < $INPUT_DATA_KO
 
+    # Sudachi's split modes A, B and C, with the same bench and dictionary.
     pushd ./bench/sudachi-bench
-    measure_rss "sudachi" java -cp "target/classes:$(cat classpath.txt)" sudachi_bench.App < $INPUT_DATA
+    measure_rss "sudachi-a" java -cp "target/classes:$(cat classpath.txt)" sudachi_bench.App A < $INPUT_DATA
+    measure_rss "sudachi-b" java -cp "target/classes:$(cat classpath.txt)" sudachi_bench.App B < $INPUT_DATA
+    measure_rss "sudachi-c" java -cp "target/classes:$(cat classpath.txt)" sudachi_bench.App C < $INPUT_DATA
     popd
 
-    measure_rss "sudachi.rs" ./bench/sudachirs-bench/target/release/sudachirs-bench < $INPUT_DATA
+    measure_rss "sudachi.rs-a" ./bench/sudachirs-bench/target/release/sudachirs-bench A < $INPUT_DATA
+    measure_rss "sudachi.rs-b" ./bench/sudachirs-bench/target/release/sudachirs-bench B < $INPUT_DATA
+    measure_rss "sudachi.rs-c" ./bench/sudachirs-bench/target/release/sudachirs-bench C < $INPUT_DATA
 
     measure_rss "rust-tinysegmenter" ./bench/rust-tinysegmenter-bench/target/release/rust-tinysegmenter-bench < $INPUT_DATA
 
