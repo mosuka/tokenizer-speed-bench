@@ -360,34 +360,68 @@ that splits 国際連合 / で / 猫 / を / 見 / た scores 76.9 % on short un
 F1 thus depends on which standard a dictionary follows, and a low F1 is not
 always an error.
 
-**Boundaries.** A boundary is a place between two words.
+**Boundaries.** A boundary is a place between two words. By the gold data,
+the places between two characters are of three kinds:
 
-| Metric | The share of | Drops when the row |
+| Kind | Where | In the sentence above |
 | --- | --- | --- |
-| Cuts at short-unit boundaries | the row's cuts that are also short-unit boundaries | cuts inside a word |
-| Long-unit boundaries kept | the long-unit boundaries that no token of the row crosses | joins words across a long-unit boundary |
-| Bunsetsu boundaries kept | the bunsetsu boundaries that no token of the row crosses | joins words across a bunsetsu boundary, an error in most standards |
+| Must cut | at a long-unit boundary | 国際連合 / で / 猫 / を / 見 / た / 。 |
+| May cut | at a short-unit boundary inside a long unit | 国際 / 連合 |
+| Must not cut | inside a short unit | 国 / 際, 連 / 合 |
 
-Four ways to split the sentence above, scored by `segmentation.py` (%):
+Dictionaries differ at the places where a row may cut (国際連合 as one word or
+as two), so cutting or not cutting there lowers no boundary metric. Each
+metric goes through places one by one:
 
-| Split | F1, short units | Cuts at short-unit boundaries | F1, long units | Long-unit boundaries kept | Bunsetsu boundaries kept |
+| Metric | Of these places | The share | Drops when the row |
+| --- | --- | --- | --- |
+| Boundary precision (short units) | where the row cuts | that are places where it must or may cut | cuts inside a short unit |
+| Boundary recall (long units) | where it must cut | where it cuts | joins two long units |
+| Boundary recall (bunsetsu) | the bunsetsu boundaries, which are among them | where it cuts | joins two bunsetsu |
+
+A row that splits 国際 / 連 / 合 / で / 猫 / を / 見 / た / 。 cuts at 8 places and 7
+of them are right, so its boundary precision is 87.5 %:
+
+| Where the row cuts | 国際 / 連 | 連 / 合 | 合 / で | で / 猫 | 猫 / を | を / 見 | 見 / た | た / 。 |
+| --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Must or may it cut there? | yes | **no** | yes | yes | yes | yes | yes | yes |
+
+A row that splits 国際連合で猫 / を / 見た / 。 cuts at 3 of the 6 places where it
+must, so its boundary recall is 50 % for long units. Two of the 6 are bunsetsu
+boundaries, and it cuts at 1 of them, so it is 50 % for bunsetsu too:
+
+| Where it must cut | 国際連合 / で | で / 猫 (bunsetsu) | 猫 / を | を / 見 (bunsetsu) | 見 / た | た / 。 |
+| --- | :---: | :---: | :---: | :---: | :---: | :---: |
+| Does the row cut there? | **no** | **no** | yes | yes | **no** | yes |
+
+Four ways to split the sentence, scored by `segmentation.py` (%):
+
+| Split | F1, short units | Boundary precision (short units) | F1, long units | Boundary recall (long units) | Boundary recall (bunsetsu) |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | A: 国際 / 連合 / で / 猫 / を / 見 / た / 。 | 100.0 | 100.0 | 76.9 | 100.0 | 100.0 |
 | B: 国際連合 / で / 猫 / を / 見 / た / 。 | 76.9 | 100.0 | 100.0 | 100.0 | 100.0 |
 | C: 国際 / 連 / 合 / で / 猫 / を / 見 / た / 。 | 80.0 | 87.5 | 71.4 | 100.0 | 100.0 |
 | D: 国際連合で猫 / を / 見た / 。 | 20.0 | 100.0 | 22.2 | 50.0 | 50.0 |
 
-* A follows short units and B long units: their F1 differ with the
-  standard, but both keep every boundary, so both split correctly.
-* C cuts inside 連合, so fewer of its cuts are at short-unit boundaries. In
+* A follows short units and B long units: their F1 differ with the standard,
+  but both cut everywhere they must and nowhere they must not, so both split
+  correctly.
+* C cuts inside 連合, where it must not, so its boundary precision drops. In
   the tables below, `kytea` scores 91 % there, as it cuts い / る.
-* D cuts only at the right places, so all its cuts are at short-unit
-  boundaries, but it joins words across long-unit and bunsetsu boundaries.
+* D cuts nowhere it must not, so its boundary precision is 100 %, but it
+  misses half of the places where it must cut.
 
-When both "Cuts at short-unit boundaries" and "Long-unit boundaries kept" are
-close to 100 %, the row splits correctly somewhere between short and long
-units, whatever the standard of its dictionary: these two compare
-dictionaries fairly. The two F1 show which standard a row is close to.
+When the boundary precision (short units) and the boundary recall (long
+units) are both close to 100 %, the row splits correctly somewhere between
+short and long units, whatever the standard of its dictionary: these two
+compare dictionaries fairly. The two F1 show which standard a row is close to.
+In Korean, the eojeol boundaries are the places where a row must cut, and the
+morpheme boundaries inside an eojeol those where it may.
+
+"Must" and "must not" are by UD's standard. A dictionary can list as one word
+what UD splits: IPADIC lists その他 and 役に立つ, and `lindera`'s `sudachidict`
+法の支配. Not cutting inside them lowers the boundary recall, but is not an
+error by the standard of the dictionary.
 
 **Agreement F1.** The F1 against the output of the reference implementation
 of the same dictionary (MeCab, for example) instead of the gold data: 100 %
@@ -489,26 +523,30 @@ Every row is scored against the layers that the UD data of its language
 annotates, so that rows that segment by different standards are read against
 the same data. The layers of Japanese (short units, long units, bunsetsu)
 and Korean (morphemes, eojeols) run from fine to coarse, each unit of a
-layer being made of whole units of the finer ones, and each layer is scored
-in two ways:
+layer being made of whole units of the finer ones. They are scored by their
+units and by their boundaries:
 
 * F1 of the units: how closely the row follows the standard of the layer. A
   row that follows another standard scores low on it; the notes say which
   rows follow which standard.
-* For the finest layer, "Cuts at ... boundaries" is the share of the row's
-  cuts (the edges of its tokens inside the sentence) that are boundaries of
-  the layer: it is low when the row splits inside the units. For a coarser
-  layer, "... boundaries kept" is the share of the layer's boundaries that no
-  token of the row crosses: it is low when the row joins units across them.
+* Boundary precision of the finest layer: the share of the row's cuts (the
+  edges of its tokens inside the sentence) that are boundaries of the layer.
+  It is low when the row splits inside the units.
+* Boundary recall of a coarser layer: the share of the layer's boundaries
+  that no token of the row crosses. It is low when the row joins units across
+  them. It looks at the tokens that cross a boundary, not at the edges of
+  tokens, so a row that drops punctuation loses no boundary next to it.
 
-A row whose cuts are all short-unit boundaries and that keeps every
-long-unit boundary segments somewhere between short and long units, whatever
-its standard. The cuts at the boundaries of the coarser layers are not
-given, nor the F1 of bunsetsu: every row splits finer than these layers, so
-these numbers would show how finely a row splits, not its errors. Chinese,
-with one layer, and English, with words and tokens, are given precision,
-recall and F1 of UD's words. The rows are sorted by the F1 of the first
-layer.
+Usually, boundary precision and recall are both taken against the same
+segmentation; precision against the finest layer with recall against a
+coarser one is a combination made for this comparison. A row whose cuts are
+all short-unit boundaries and that cuts at every long-unit boundary segments
+somewhere between short and long units, whatever its standard. The boundary
+precision of the coarser layers is not given, nor the F1 of bunsetsu: every
+row splits finer than these layers, so these numbers would show how finely a
+row splits, not its errors. Chinese, with one layer, and English, with words
+and tokens, are given precision, recall and F1 of UD's words. The rows are
+sorted by the F1 of the first layer.
 
 * Japanese: UD Japanese is tokenized in three layers, as the Balanced Corpus
   of Contemporary Written Japanese (BCCWJ) is: short units, long units and
@@ -530,12 +568,12 @@ layer.
   * Every bunsetsu boundary (MISC `BunsetuBILabel`) is also a boundary of
     long and short units. Ignored tokens cross no boundary, and the cuts are
     those of the tokens that are scored.
-  * Every row but `kytea`, `vaporetto` and `rust-tinysegmenter` cuts at
-    short-unit boundaries in at least 98.7 % of its cuts, and every row keeps
-    at least 98.8 % of the long-unit and 98.7 % of the 8,972 bunsetsu
-    boundaries. The IPADIC rows and Sudachi's modes B and C score lower on
-    short units because their units are longer, not because they cut at wrong
-    places. `kytea` and `vaporetto` split inside short units (い / る), and
+  * Every row but `kytea`, `vaporetto` and `rust-tinysegmenter` has a boundary
+    precision of at least 98.7 %, and every row a boundary recall of at least
+    98.8 % for long units and 98.7 % for the 8,972 bunsetsu boundaries. The
+    IPADIC rows and Sudachi's modes B and C score lower on short units
+    because their units are longer, not because they cut at wrong places.
+    `kytea` and `vaporetto` split inside short units (い / る), and
     `rust-tinysegmenter` loses on both sides. The tokens that cross a
     bunsetsu boundary are mostly multiword entries of IPADIC (役に立つ, として)
     and named entities and idioms of `lindera`'s `sudachidict` (法の支配,
@@ -552,11 +590,12 @@ layer.
   `+` (조약에 = 조약+에). They are base forms, so a word whose parts do not
   concatenate back to it (의해 = 의하+어) is left out of the morpheme scores on
   both sides, which leaves 23,517 of the 28,366 words (82.9 %) scored; a cut
-  inside such a word is not counted. The mecab-ko-dic rows cut at morpheme
-  boundaries in 97.6 % of their cuts and litsea in all but 1 or 2 of its
-  48,000 cuts, and every row keeps every eojeol boundary. The sentences are
-  not those of the PUD treebanks. UD_Korean-PUD is not used: it splits the
-  copula and some endings and compound nouns off eojeols
+  inside such a word is not counted. The mecab-ko-dic rows have a boundary
+  precision of 97.6 %, litsea cuts elsewhere than at a morpheme boundary in
+  only 1 or 2 of its 48,000 cuts, and every row has a boundary recall of
+  100 % for eojeols. The sentences are not those of the PUD treebanks.
+  UD_Korean-PUD is not used: it splits the copula and some endings and
+  compound nouns off eojeols
   (수준이지만 = 수준 + 이지만), so only 69.4 % of its words that are not
   punctuation are eojeols, and the others are not morphemes either.
 * Chinese: UD_Chinese-PUD is in traditional script and was annotated by
@@ -574,7 +613,7 @@ layer.
 
 #### Japanese, UD_Japanese-PUD r2.19 (short units, long units, bunsetsu)
 
-| Tokenizer | Dictionary / Model | F1, short units [%] | Cuts at short-unit boundaries [%] | F1, long units [%] | Long-unit boundaries kept [%] | Bunsetsu boundaries kept [%] |
+| Tokenizer | Dictionary / Model | F1, short units [%] | Boundary precision (short units) [%] | F1, long units [%] | Boundary recall (long units) [%] | Boundary recall (bunsetsu) [%] |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
 | vibrato | unidic-cwj-3.1.1 | 98.80 | 99.33 | 67.39 | 99.97 | 99.97 |
 | vibrato | unidic-cwj-3.1.1+compact-dual | 98.77 | 99.32 | 67.40 | 99.97 | 99.97 |
@@ -604,7 +643,7 @@ layer.
 
 #### Korean, UD_Korean-Kaist r2.19 test (morphemes, eojeols)
 
-| Tokenizer | Dictionary / Model | F1, morphemes [%] | Cuts at morpheme boundaries [%] | F1, eojeols [%] | Eojeol boundaries kept [%] |
+| Tokenizer | Dictionary / Model | F1, morphemes [%] | Boundary precision (morphemes) [%] | F1, eojeols [%] | Boundary recall (eojeols) [%] |
 | --- | --- | ---: | ---: | ---: | ---: |
 | nori (Lucene) | mecab-ko-dic (bundled) | 92.80 | 97.61 | 18.25 | 100.00 |
 | alyze (nori) | mecab-ko-dic (embedded) | 92.80 | 97.61 | 18.25 | 100.00 |
