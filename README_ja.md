@@ -272,18 +272,18 @@ GNU time（`/usr/bin/time -v`）で各反復をラップして計測したベン
 トークンを書き出し、`segmentation.py` がそれを採点します。
 
 トークンは、相手側のトークンとまったく同じ文字の範囲を覆うときに正解と数えます。
-適合率はその行のトークンに対する割合、再現率は参照の実装または正解のデータの
-トークンに対する割合です。採点の前に、最初の文字が空白・句読点・記号・制御文字
-のトークンを両側から除きます。これは Lucene の kuromoji と nori が句読点を
+適合率はその行のトークンに対する割合、再現率はリファレンス実装または正解の
+データのトークンに対する割合です。採点の前に、最初の文字が空白・句読点・記号・
+制御文字のトークンを両側から除きます。これは Lucene の kuromoji と nori が句読点を
 捨てる規則で、句読点を捨てる行と残す行を比べられるようにするためです。
 
-### 参照の実装との一致
+### リファレンス実装との一致
 
-同じ辞書またはモデルを読む行を、その参照の実装と、速度の表のコーパスで比べます。
-一致は、実装が参照をどれだけ再現しているかを示すもので、分かち書きが正しいかは
-示しません。`kuromoji (Lucene)` と `alyze (kuromoji)`、`nori (Lucene)` と
-`alyze (nori)`、`ko-dic` の `lindera` と `mecab-ko` は、それぞれ同じトークンを
-書き出します。`lindera` の `ipadic` は、`mecab` が読む IPADIC と同じ版の後の
+同じ辞書またはモデルを読む行を、そのリファレンス実装と、速度の表のコーパスで
+比べます。一致は、実装がリファレンス実装をどれだけ再現しているかを示すもので、
+分かち書きが正しいかは示しません。`kuromoji (Lucene)` と `alyze (kuromoji)`、
+`nori (Lucene)` と `alyze (nori)`、`ko-dic` の `lindera` と `mecab-ko` は、
+それぞれ同じトークンを書き出します。`lindera` の `ipadic` は、`mecab` が読む IPADIC と同じ版の後の
 アーカイブ（`mecab-ipadic-2.7.0-20250920`。`mecab` は 2.7.0-20070801）から
 作られています。vibrato のリリースノートによると、`ipadic-mecab-2.7.0` は
 IPADIC v2.7.0 から作られています。`lindera` の `sudachidict` は `sudachi` と
@@ -291,7 +291,7 @@ IPADIC v2.7.0 から作られています。`lindera` の `sudachidict` は `sud
 SudachiDict 20260723 で、Sudachi の分割モードを使わずに分割します。一方
 `sudachi` は 20261015 の core の辞書を読み、C モードで分割します。
 
-#### IPADIC（参照: mecab、ipadic 2.7.0）
+#### IPADIC（リファレンス実装: mecab、ipadic 2.7.0）
 
 | トークナイザ | 辞書・モデル | 一致の F 値 [%] | 違う行 |
 | --- | --- | ---: | ---: |
@@ -301,20 +301,20 @@ SudachiDict 20260723 で、Sudachi の分割モードを使わずに分割しま
 | kuromoji (Lucene) | ipadic (bundled) | 99.41 | 2,346 行中 398 行 |
 | alyze (kuromoji) | ipadic (embedded) | 99.41 | 2,346 行中 398 行 |
 
-#### UniDic CWJ 3.1.1（参照: mecab、unidic-cwj-3.1.1）
+#### UniDic CWJ 3.1.1（リファレンス実装: mecab、unidic-cwj-3.1.1）
 
 | トークナイザ | 辞書・モデル | 一致の F 値 [%] | 違う行 |
 | --- | --- | ---: | ---: |
 | vibrato | unidic-cwj-3.1.1 | 99.98 | 2,346 行中 6 行 |
 | vibrato | unidic-cwj-3.1.1+compact-dual | 99.97 | 2,346 行中 15 行 |
 
-#### UniDic CWJ 202512（参照: mecab、unidic-cwj-202512）
+#### UniDic CWJ 202512（リファレンス実装: mecab、unidic-cwj-202512）
 
 | トークナイザ | 辞書・モデル | 一致の F 値 [%] | 違う行 |
 | --- | --- | ---: | ---: |
 | lindera | unidic-cwj | 100.00 | 2,346 行中 2 行 |
 
-#### mecab-ko-dic 2.1.1（参照: mecab-ko、mecab-ko-dic 2.1.1-20180720）
+#### mecab-ko-dic 2.1.1（リファレンス実装: mecab-ko、mecab-ko-dic 2.1.1-20180720）
 
 | トークナイザ | 辞書・モデル | 一致の F 値 [%] | 違う行 |
 | --- | --- | ---: | ---: |
@@ -323,13 +323,13 @@ SudachiDict 20260723 で、Sudachi の分割モードを使わずに分割しま
 | nori (Lucene) | mecab-ko-dic (bundled) | 99.80 | 3,967 行中 132 行 |
 | alyze (nori) | mecab-ko-dic (embedded) | 99.80 | 3,967 行中 132 行 |
 
-#### SudachiDict 20261015 core（参照: sudachi、sudachi-dictionary-20261015-core）
+#### SudachiDict 20261015 core（リファレンス実装: sudachi、sudachi-dictionary-20261015-core）
 
 | トークナイザ | 辞書・モデル | 一致の F 値 [%] | 違う行 |
 | --- | --- | ---: | ---: |
 | sudachi.rs | sudachi-dictionary-20261015-core | 99.73 | 2,346 行中 192 行 |
 
-#### KyTea model jp-0.4.7-5（参照: kytea、jp-0.4.7-5.mod）
+#### KyTea model jp-0.4.7-5（リファレンス実装: kytea、jp-0.4.7-5.mod）
 
 | トークナイザ | 辞書・モデル | 一致の F 値 [%] | 違う行 |
 | --- | --- | ---: | ---: |
