@@ -23,7 +23,7 @@ only on Linux); the results below are measured on Linux. Install Rust and the
 following packages before running the commands above. On Ubuntu,
 `libtool-bin` provides the `libtool` command that `./compile_all.sh` checks
 for, and `time` provides the `/usr/bin/time` that `./run_all.sh` uses to
-measure peak memory.
+measure peak memory. The Lucene benches need Java 21 or later.
 
 ```sh
 % sudo apt install build-essential patch autoconf automake \
@@ -31,8 +31,8 @@ measure peak memory.
     wget unzip xz-utils time
 ```
 
-On macOS, install Rust, a JDK and the Xcode Command Line Tools, plus the
-following tools from Homebrew. On Windows, run the scripts in WSL.
+On macOS, install Rust, a JDK (21 or later) and the Xcode Command Line Tools,
+plus the following tools from Homebrew. On Windows, run the scripts in WSL.
 
 ```sh
 % brew install wget autoconf automake libtool maven
@@ -143,6 +143,18 @@ between word boundaries, and the bench counts the word-like ones. On English it
 is a baseline, not a like-for-like comparison with litsea's learned
 segmenter.
 
+`kuromoji (Atilika)` is Atilika's Kuromoji
+(`com.atilika.kuromoji:kuromoji-ipadic` 0.9.0) with the IPADIC its jar
+bundles; the bench calls `new Tokenizer()`, and its tokens include
+punctuation. `kuromoji (Lucene)` and `nori (Lucene)` are the Japanese and
+Korean tokenizers of Apache Lucene 10.6.0 (`lucene-analysis-kuromoji` and
+`lucene-analysis-nori`), whose jars bundle mecab-ipadic-2.7.0-20070801 and
+mecab-ko-dic-2.1.1-20180720. They run with `JapaneseTokenizer.Mode.NORMAL`
+and `KoreanTokenizer.DecompoundMode.NONE` instead of Lucene's defaults
+(`SEARCH` and `DISCARD`), and discard punctuation: the options of the alyze
+rows, with which Lucene and alyze segment both corpora identically. Each
+bench reuses one tokenizer for every line, as Lucene intends.
+
 Dictionary / Model Size is the on-disk size of the dictionary/model file(s)
 each tokenizer actually opens at runtime, not its runtime memory usage; the
 opened files were logged with `strace`. The column excludes small
@@ -152,8 +164,10 @@ dictionary (e.g. the raw CSV lexicon
 source, evaluation sets, license files, and the compile/training-only
 `model.bin` and `*.def` sources shipped in the MeCab dictionary directories
 besides the compiled `sys.dic`/`matrix.bin`/`char.bin`/`unk.dic` the tagger
-itself opens; kuromoji's dictionary is measured from its extracted `.bin`
-files rather than its compressed `.jar`; vibrato's `system.dic.zst` is
+itself opens; the dictionaries in jars are measured from their extracted
+entries rather than the compressed `.jar`, the `.bin` files for
+`kuromoji (Atilika)` and the `.dat` files for the Lucene rows; vibrato's
+`system.dic.zst` is
 measured decompressed, matching what it actually holds in memory). For the
 tokenizers that embed their dictionary in the executable, it is the size of
 the embedded data: vaporetto's predictor, which its build script converts from
@@ -171,55 +185,57 @@ Maven's own footprint is not counted against them.
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| vaporetto | 0.7.0 | kytea jp-0.4.7-5.mod | 80.6 MB | 24,762,547 | 1,185,744 | 188.6 MB |
-| litsea (japanese) | 0.16.0 | japanese.model | 1.1 MB | 16,638,107 | 654,034 | 12.0 MB |
-| litsea (japanese, two-stage) | 0.16.0 | japanese_pos.model | 5.4 MB | 8,193,895 | 337,115 | 44.9 MB |
-| vibrato | 0.5.3 | ipadic-mecab-2.7.0 | 45.6 MB | 7,859,537 | 226,563 | 68.8 MB |
-| lindera | 7.0.0 | ipadic | 45.3 MB | 6,781,742 | 329,904 | 18.3 MB |
-| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 6,482,138 | 279,234 | 33.8 MB |
-| lindera | 7.0.0 | unidic | 189.9 MB | 4,727,136 | 250,452 | 91.0 MB |
-| alyze (kuromoji) | 0.2.0 | ipadic (embedded) | 12.5 MB | 4,567,718 | 178,696 | 18.0 MB |
-| vibrato | 0.5.3 | unidic-cwj-3.1.1 | 684.2 MB | 4,022,159 | 197,504 | 723.7 MB |
-| lindera | 7.0.0 | sudachidict | 564.9 MB | 3,833,069 | 201,526 | 155.1 MB |
-| rust-tinysegmenter | 0.1.1 | - | - | 2,759,251 | 52,395 | 3.8 MB |
-| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 2,598,992 | 71,566 | 736.5 MB |
-| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 2,524,186 | 128,903 | 371.5 MB |
-| lindera | 7.0.0 | unidic-cwj | 1,244.3 MB | 2,313,688 | 119,081 | 1,009.6 MB |
-| lindera | 7.0.0 | unidic-csj | 1,264.6 MB | 2,290,937 | 119,151 | 1,029.9 MB |
-| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 2,253,468 | 80,966 | 341.1 MB |
-| sudachi.rs | git tag `v0.7.0` | sudachi-dictionary-20261015-core | 192.9 MB | 1,834,100 | 68,889 | 176.0 MB |
-| mecab | thirdparty submodule | unidic-cwj-202512 | 1,252.8 MB | 1,605,914 | 84,358 | 485.2 MB |
-| vibrato | 0.5.3 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 1,587,345 | 55,504 | 326.0 MB |
-| sudachi | 0.8.2 | sudachi-dictionary-20261015-core | 192.9 MB | 805,371 | 32,109 | 566.1 MB |
+| vaporetto | 0.7.0 | kytea jp-0.4.7-5.mod | 80.6 MB | 24,841,134 | 1,213,976 | 188.7 MB |
+| litsea (japanese) | 0.16.0 | japanese.model | 1.1 MB | 16,722,972 | 623,392 | 12.0 MB |
+| litsea (japanese, two-stage) | 0.16.0 | japanese_pos.model | 5.4 MB | 8,209,157 | 363,630 | 44.9 MB |
+| vibrato | 0.5.3 | ipadic-mecab-2.7.0 | 45.6 MB | 7,881,993 | 183,118 | 68.8 MB |
+| lindera | 7.0.0 | ipadic | 45.3 MB | 6,787,817 | 333,025 | 18.3 MB |
+| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 6,563,562 | 282,572 | 33.8 MB |
+| lindera | 7.0.0 | unidic | 189.9 MB | 4,723,004 | 253,681 | 91.0 MB |
+| alyze (kuromoji) | 0.2.0 | ipadic (embedded) | 12.5 MB | 4,584,678 | 182,014 | 18.0 MB |
+| vibrato | 0.5.3 | unidic-cwj-3.1.1 | 684.2 MB | 4,058,161 | 203,445 | 723.8 MB |
+| lindera | 7.0.0 | sudachidict | 564.9 MB | 3,807,446 | 202,115 | 155.1 MB |
+| rust-tinysegmenter | 0.1.1 | - | - | 2,604,513 | 52,431 | 3.8 MB |
+| kuromoji (Lucene) | 10.6.0 | ipadic (bundled) | 8.7 MB | 2,604,376 | 65,793 | 111.2 MB |
+| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 2,586,761 | 99,031 | 736.5 MB |
+| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 2,518,872 | 119,100 | 371.5 MB |
+| lindera | 7.0.0 | unidic-cwj | 1,244.3 MB | 2,304,829 | 128,556 | 1,009.6 MB |
+| lindera | 7.0.0 | unidic-csj | 1,264.6 MB | 2,293,105 | 130,524 | 1,029.9 MB |
+| kuromoji (Atilika) | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 2,260,815 | 80,788 | 341.4 MB |
+| sudachi.rs | git tag `v0.7.0` | sudachi-dictionary-20261015-core | 192.9 MB | 1,837,778 | 76,484 | 176.0 MB |
+| mecab | thirdparty submodule | unidic-cwj-202512 | 1,252.8 MB | 1,616,467 | 84,182 | 485.2 MB |
+| vibrato | 0.5.3 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 1,589,938 | 55,646 | 326.0 MB |
+| sudachi | 0.8.2 | sudachi-dictionary-20261015-core | 192.9 MB | 808,914 | 27,098 | 566.3 MB |
 
 ### Korean (`mujeong.txt`, 320,850 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (korean) | 0.16.0 | korean.model | 0.1 MB | 24,146,228 | 943,141 | 4.2 MB |
-| litsea (korean, two-stage) | 0.16.0 | korean_pos.model | 3.9 MB | 7,677,924 | 265,297 | 32.3 MB |
-| mecab | thirdparty submodule | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 3,647,144 | 159,079 | 70.5 MB |
-| lindera | 7.0.0 | ko-dic | 81.6 MB | 3,613,149 | 94,180 | 83.8 MB |
-| alyze (nori) | 0.2.0 | mecab-ko-dic (embedded) | 43.2 MB | 2,626,843 | 108,301 | 47.7 MB |
-| mecab-ko | 0.996-ko-0.9.2 | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 1,691,201 | 103,063 | 70.3 MB |
+| litsea (korean) | 0.16.0 | korean.model | 0.1 MB | 24,081,430 | 883,999 | 4.2 MB |
+| litsea (korean, two-stage) | 0.16.0 | korean_pos.model | 3.9 MB | 7,605,267 | 328,732 | 32.3 MB |
+| mecab | thirdparty submodule | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 3,668,364 | 174,481 | 70.5 MB |
+| lindera | 7.0.0 | ko-dic | 81.6 MB | 3,600,781 | 99,692 | 83.8 MB |
+| alyze (nori) | 0.2.0 | mecab-ko-dic (embedded) | 43.2 MB | 2,621,246 | 99,389 | 47.9 MB |
+| mecab-ko | 0.996-ko-0.9.2 | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 1,682,780 | 108,831 | 70.3 MB |
+| nori (Lucene) | 10.6.0 | mecab-ko-dic (bundled) | 23.9 MB | 1,353,593 | 47,301 | 158.0 MB |
 
 ### Chinese (`rulin_waishi.txt`, 328,153 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (chinese) | 0.16.0 | chinese.model | 1.9 MB | 16,158,038 | 800,224 | 19.3 MB |
-| lindera | 7.0.0 | cc-cedict | 22.1 MB | 14,779,048 | 845,826 | 9.8 MB |
-| lindera | 7.0.0 | jieba | 49.0 MB | 10,652,010 | 694,348 | 22.3 MB |
-| litsea (chinese, two-stage) | 0.16.0 | chinese_pos.model | 8.0 MB | 6,199,567 | 168,798 | 56.0 MB |
-| alyze (smartcn) | 0.2.0 | smartcn (embedded) | 4.5 MB | 5,391,555 | 276,166 | 22.0 MB |
+| litsea (chinese) | 0.16.0 | chinese.model | 1.9 MB | 16,104,948 | 626,072 | 19.2 MB |
+| lindera | 7.0.0 | cc-cedict | 22.1 MB | 14,821,366 | 839,669 | 9.8 MB |
+| lindera | 7.0.0 | jieba | 49.0 MB | 10,627,332 | 738,976 | 22.3 MB |
+| litsea (chinese, two-stage) | 0.16.0 | chinese_pos.model | 8.0 MB | 6,240,491 | 227,699 | 56.0 MB |
+| alyze (smartcn) | 0.2.0 | smartcn (embedded) | 4.5 MB | 5,403,179 | 254,533 | 22.0 MB |
 
 ### English (`pride_and_prejudice.txt`, 677,531 characters)
 
 | Tokenizer | Version | Dictionary / Model | Dictionary / Model Size | Speed [chars/sec] | Std dev | Peak Memory |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| alyze (UAX #29) | 0.2.0 | - | - | 315,490,421 | 23,713,663 | 3.0 MB |
-| litsea (english) | 0.16.0 | english.model | 0.1 MB | 32,872,916 | 1,164,280 | 4.6 MB |
-| litsea (english, two-stage) | 0.16.0 | english_pos.model | 2.9 MB | 12,062,422 | 300,157 | 23.7 MB |
+| alyze (UAX #29) | 0.2.0 | - | - | 321,883,225 | 19,996,784 | 3.0 MB |
+| litsea (english) | 0.16.0 | english.model | 0.1 MB | 33,051,314 | 951,716 | 4.6 MB |
+| litsea (english, two-stage) | 0.16.0 | english_pos.model | 2.9 MB | 12,125,331 | 300,371 | 23.7 MB |
 
 These numbers depend heavily on the measurement environment (CPU, memory
 bandwidth, OS scheduler, JIT/JVM warm-up) and should only be used to compare

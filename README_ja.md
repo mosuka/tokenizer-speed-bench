@@ -24,7 +24,8 @@
 Rust と以下のパッケージを入れてから、上のコマンドを実行します。
 Ubuntu では、`./compile_all.sh` が確かめる `libtool` コマンドは
 `libtool-bin` に、`./run_all.sh` がピークメモリの計測に使う
-`/usr/bin/time` は `time` に入っています。
+`/usr/bin/time` は `time` に入っています。Lucene のベンチには Java 21 以上が
+要ります。
 
 ```sh
 % sudo apt install build-essential patch autoconf automake \
@@ -32,7 +33,7 @@ Ubuntu では、`./compile_all.sh` が確かめる `libtool` コマンドは
     wget unzip xz-utils time
 ```
 
-macOS では、Rust、JDK、Xcode Command Line Tools と、
+macOS では、Rust、JDK（21 以上）、Xcode Command Line Tools と、
 以下のツールを Homebrew で入れます。
 Windows では WSL で実行してください。
 
@@ -146,6 +147,18 @@ alyze の規則ベースの単語分割（辞書を使わない DFA）で、単�
 基準となる値であり、litsea の学習済みの分かち書きと同じ条件の比較では
 ありません。
 
+`kuromoji (Atilika)` は Atilika の Kuromoji
+（`com.atilika.kuromoji:kuromoji-ipadic` 0.9.0）で、jar に同梱された IPADIC を
+使います。ベンチは `new Tokenizer()` を呼び出し、トークンには句読点も含まれ
+ます。`kuromoji (Lucene)` と `nori (Lucene)` は Apache Lucene 10.6.0 の日本語と
+韓国語のトークナイザ（`lucene-analysis-kuromoji` と `lucene-analysis-nori`）で、
+jar に mecab-ipadic-2.7.0-20070801 と mecab-ko-dic-2.1.1-20180720 が同梱されて
+います。Lucene の既定（`SEARCH` と `DISCARD`）ではなく
+`JapaneseTokenizer.Mode.NORMAL` と `KoreanTokenizer.DecompoundMode.NONE` で、
+句読点を捨てて計測しています。これは alyze の行と同じ設定で、この設定では
+Lucene と alyze は両方のコーパスで同じ分かち書きをします。どちらのベンチも、
+Lucene の想定どおり 1 つのトークナイザをすべての行で使い回します。
+
 辞書・モデルサイズ（Dictionary / Model Size）は、各トークナイザが実行時に
 実際に開くファイルのディスク上のサイズであり、実行時のメモリ使用量では
 ありません。開いたファイルは `strace` で確かめました。小さな設定ファイル
@@ -155,8 +168,9 @@ alyze の規則ベースの単語分割（辞書を使わない DFA）で、単�
 それらは除外しています（例: MeCab の辞書ディレクトリに含まれる生の CSV 語彙
 ソース、評価用データ、ライセンスファイル、コンパイル・学習専用の
 `model.bin` や `*.def` ソース。Tagger 自身が開くのはコンパイル済みの
-`sys.dic`/`matrix.bin`/`char.bin`/`unk.dic` のみです。kuromoji の辞書は
-圧縮された `.jar` ではなく展開後の `.bin` ファイルで、vibrato の
+`sys.dic`/`matrix.bin`/`char.bin`/`unk.dic` のみです。jar の中の辞書は
+圧縮された `.jar` ではなく展開後のファイル（`kuromoji (Atilika)` は `.bin`、
+Lucene の行は `.dat`）で、vibrato の
 `system.dic.zst` は実際にメモリ上に保持される展開後のサイズで計測して
 います）。辞書を実行ファイルに埋め込むトークナイザは、埋め込んだデータの
 サイズです。vaporetto はビルドスクリプトが KyTea のモデルから変換した
@@ -173,55 +187,57 @@ GNU time（`/usr/bin/time -v`）で各反復をラップして計測したベン
 
 | トークナイザ | バージョン | 辞書・モデル | 辞書・モデルサイズ | 速度 [chars/sec] | 標準偏差 | ピークメモリ |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| vaporetto | 0.7.0 | kytea jp-0.4.7-5.mod | 80.6 MB | 24,762,547 | 1,185,744 | 188.6 MB |
-| litsea (japanese) | 0.16.0 | japanese.model | 1.1 MB | 16,638,107 | 654,034 | 12.0 MB |
-| litsea (japanese, two-stage) | 0.16.0 | japanese_pos.model | 5.4 MB | 8,193,895 | 337,115 | 44.9 MB |
-| vibrato | 0.5.3 | ipadic-mecab-2.7.0 | 45.6 MB | 7,859,537 | 226,563 | 68.8 MB |
-| lindera | 7.0.0 | ipadic | 45.3 MB | 6,781,742 | 329,904 | 18.3 MB |
-| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 6,482,138 | 279,234 | 33.8 MB |
-| lindera | 7.0.0 | unidic | 189.9 MB | 4,727,136 | 250,452 | 91.0 MB |
-| alyze (kuromoji) | 0.2.0 | ipadic (embedded) | 12.5 MB | 4,567,718 | 178,696 | 18.0 MB |
-| vibrato | 0.5.3 | unidic-cwj-3.1.1 | 684.2 MB | 4,022,159 | 197,504 | 723.7 MB |
-| lindera | 7.0.0 | sudachidict | 564.9 MB | 3,833,069 | 201,526 | 155.1 MB |
-| rust-tinysegmenter | 0.1.1 | - | - | 2,759,251 | 52,395 | 3.8 MB |
-| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 2,598,992 | 71,566 | 736.5 MB |
-| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 2,524,186 | 128,903 | 371.5 MB |
-| lindera | 7.0.0 | unidic-cwj | 1,244.3 MB | 2,313,688 | 119,081 | 1,009.6 MB |
-| lindera | 7.0.0 | unidic-csj | 1,264.6 MB | 2,290,937 | 119,151 | 1,029.9 MB |
-| kuromoji | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 2,253,468 | 80,966 | 341.1 MB |
-| sudachi.rs | git tag `v0.7.0` | sudachi-dictionary-20261015-core | 192.9 MB | 1,834,100 | 68,889 | 176.0 MB |
-| mecab | thirdparty submodule | unidic-cwj-202512 | 1,252.8 MB | 1,605,914 | 84,358 | 485.2 MB |
-| vibrato | 0.5.3 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 1,587,345 | 55,504 | 326.0 MB |
-| sudachi | 0.8.2 | sudachi-dictionary-20261015-core | 192.9 MB | 805,371 | 32,109 | 566.1 MB |
+| vaporetto | 0.7.0 | kytea jp-0.4.7-5.mod | 80.6 MB | 24,841,134 | 1,213,976 | 188.7 MB |
+| litsea (japanese) | 0.16.0 | japanese.model | 1.1 MB | 16,722,972 | 623,392 | 12.0 MB |
+| litsea (japanese, two-stage) | 0.16.0 | japanese_pos.model | 5.4 MB | 8,209,157 | 363,630 | 44.9 MB |
+| vibrato | 0.5.3 | ipadic-mecab-2.7.0 | 45.6 MB | 7,881,993 | 183,118 | 68.8 MB |
+| lindera | 7.0.0 | ipadic | 45.3 MB | 6,787,817 | 333,025 | 18.3 MB |
+| mecab | thirdparty submodule | ipadic 2.7.0 | 50.5 MB | 6,563,562 | 282,572 | 33.8 MB |
+| lindera | 7.0.0 | unidic | 189.9 MB | 4,723,004 | 253,681 | 91.0 MB |
+| alyze (kuromoji) | 0.2.0 | ipadic (embedded) | 12.5 MB | 4,584,678 | 182,014 | 18.0 MB |
+| vibrato | 0.5.3 | unidic-cwj-3.1.1 | 684.2 MB | 4,058,161 | 203,445 | 723.8 MB |
+| lindera | 7.0.0 | sudachidict | 564.9 MB | 3,807,446 | 202,115 | 155.1 MB |
+| rust-tinysegmenter | 0.1.1 | - | - | 2,604,513 | 52,431 | 3.8 MB |
+| kuromoji (Lucene) | 10.6.0 | ipadic (bundled) | 8.7 MB | 2,604,376 | 65,793 | 111.2 MB |
+| kytea | thirdparty submodule | jp-0.4.7-5.mod | 122.3 MB | 2,586,761 | 99,031 | 736.5 MB |
+| mecab | thirdparty submodule | unidic-cwj-3.1.1 | 691.0 MB | 2,518,872 | 119,100 | 371.5 MB |
+| lindera | 7.0.0 | unidic-cwj | 1,244.3 MB | 2,304,829 | 128,556 | 1,009.6 MB |
+| lindera | 7.0.0 | unidic-csj | 1,264.6 MB | 2,293,105 | 130,524 | 1,029.9 MB |
+| kuromoji (Atilika) | kuromoji-ipadic 0.9.0 | ipadic (bundled) | 31.9 MB | 2,260,815 | 80,788 | 341.4 MB |
+| sudachi.rs | git tag `v0.7.0` | sudachi-dictionary-20261015-core | 192.9 MB | 1,837,778 | 76,484 | 176.0 MB |
+| mecab | thirdparty submodule | unidic-cwj-202512 | 1,252.8 MB | 1,616,467 | 84,182 | 485.2 MB |
+| vibrato | 0.5.3 | unidic-cwj-3.1.1+compact-dual | 286.4 MB | 1,589,938 | 55,646 | 326.0 MB |
+| sudachi | 0.8.2 | sudachi-dictionary-20261015-core | 192.9 MB | 808,914 | 27,098 | 566.3 MB |
 
 ### 韓国語（`mujeong.txt`、320,850 文字）
 
 | トークナイザ | バージョン | 辞書・モデル | 辞書・モデルサイズ | 速度 [chars/sec] | 標準偏差 | ピークメモリ |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (korean) | 0.16.0 | korean.model | 0.1 MB | 24,146,228 | 943,141 | 4.2 MB |
-| litsea (korean, two-stage) | 0.16.0 | korean_pos.model | 3.9 MB | 7,677,924 | 265,297 | 32.3 MB |
-| mecab | thirdparty submodule | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 3,647,144 | 159,079 | 70.5 MB |
-| lindera | 7.0.0 | ko-dic | 81.6 MB | 3,613,149 | 94,180 | 83.8 MB |
-| alyze (nori) | 0.2.0 | mecab-ko-dic (embedded) | 43.2 MB | 2,626,843 | 108,301 | 47.7 MB |
-| mecab-ko | 0.996-ko-0.9.2 | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 1,691,201 | 103,063 | 70.3 MB |
+| litsea (korean) | 0.16.0 | korean.model | 0.1 MB | 24,081,430 | 883,999 | 4.2 MB |
+| litsea (korean, two-stage) | 0.16.0 | korean_pos.model | 3.9 MB | 7,605,267 | 328,732 | 32.3 MB |
+| mecab | thirdparty submodule | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 3,668,364 | 174,481 | 70.5 MB |
+| lindera | 7.0.0 | ko-dic | 81.6 MB | 3,600,781 | 99,692 | 83.8 MB |
+| alyze (nori) | 0.2.0 | mecab-ko-dic (embedded) | 43.2 MB | 2,621,246 | 99,389 | 47.9 MB |
+| mecab-ko | 0.996-ko-0.9.2 | mecab-ko-dic 2.1.1-20180720 | 96.7 MB | 1,682,780 | 108,831 | 70.3 MB |
+| nori (Lucene) | 10.6.0 | mecab-ko-dic (bundled) | 23.9 MB | 1,353,593 | 47,301 | 158.0 MB |
 
 ### 中国語（`rulin_waishi.txt`、328,153 文字）
 
 | トークナイザ | バージョン | 辞書・モデル | 辞書・モデルサイズ | 速度 [chars/sec] | 標準偏差 | ピークメモリ |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| litsea (chinese) | 0.16.0 | chinese.model | 1.9 MB | 16,158,038 | 800,224 | 19.3 MB |
-| lindera | 7.0.0 | cc-cedict | 22.1 MB | 14,779,048 | 845,826 | 9.8 MB |
-| lindera | 7.0.0 | jieba | 49.0 MB | 10,652,010 | 694,348 | 22.3 MB |
-| litsea (chinese, two-stage) | 0.16.0 | chinese_pos.model | 8.0 MB | 6,199,567 | 168,798 | 56.0 MB |
-| alyze (smartcn) | 0.2.0 | smartcn (embedded) | 4.5 MB | 5,391,555 | 276,166 | 22.0 MB |
+| litsea (chinese) | 0.16.0 | chinese.model | 1.9 MB | 16,104,948 | 626,072 | 19.2 MB |
+| lindera | 7.0.0 | cc-cedict | 22.1 MB | 14,821,366 | 839,669 | 9.8 MB |
+| lindera | 7.0.0 | jieba | 49.0 MB | 10,627,332 | 738,976 | 22.3 MB |
+| litsea (chinese, two-stage) | 0.16.0 | chinese_pos.model | 8.0 MB | 6,240,491 | 227,699 | 56.0 MB |
+| alyze (smartcn) | 0.2.0 | smartcn (embedded) | 4.5 MB | 5,403,179 | 254,533 | 22.0 MB |
 
 ### 英語（`pride_and_prejudice.txt`、677,531 文字）
 
 | トークナイザ | バージョン | 辞書・モデル | 辞書・モデルサイズ | 速度 [chars/sec] | 標準偏差 | ピークメモリ |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| alyze (UAX #29) | 0.2.0 | - | - | 315,490,421 | 23,713,663 | 3.0 MB |
-| litsea (english) | 0.16.0 | english.model | 0.1 MB | 32,872,916 | 1,164,280 | 4.6 MB |
-| litsea (english, two-stage) | 0.16.0 | english_pos.model | 2.9 MB | 12,062,422 | 300,157 | 23.7 MB |
+| alyze (UAX #29) | 0.2.0 | - | - | 321,883,225 | 19,996,784 | 3.0 MB |
+| litsea (english) | 0.16.0 | english.model | 0.1 MB | 33,051,314 | 951,716 | 4.6 MB |
+| litsea (english, two-stage) | 0.16.0 | english_pos.model | 2.9 MB | 12,125,331 | 300,371 | 23.7 MB |
 
 これらの数値は計測環境（CPU、メモリ帯域、OS スケジューラ、JIT/JVM の
 ウォームアップ）に大きく依存するため、絶対的なベンチマークとしてでは

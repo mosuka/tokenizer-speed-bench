@@ -61,6 +61,14 @@ do
     measure_rss "kuromoji" java -cp "target/classes:$(cat classpath.txt)" kuromoji_bench.App < ../../$INPUT_DATA
     popd
 
+    pushd ./bench/lucene-kuromoji-bench
+    measure_rss "lucene-kuromoji" java -cp "target/classes:$(cat classpath.txt)" lucene_kuromoji_bench.App < ../../$INPUT_DATA
+    popd
+
+    pushd ./bench/lucene-nori-bench
+    measure_rss "lucene-nori" java -cp "target/classes:$(cat classpath.txt)" lucene_nori_bench.App < ../../$INPUT_DATA_KO
+    popd
+
     measure_rss "lindera-ipadic" ./bench/lindera-ipadic-bench/target/release/lindera-ipadic-bench < $INPUT_DATA
 
     measure_rss "lindera-unidic" ./bench/lindera-unidic-bench/target/release/lindera-unidic-bench < $INPUT_DATA
