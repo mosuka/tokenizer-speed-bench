@@ -7,7 +7,9 @@ Run from the repository root: python3 -B -m unittest test_segmentation
 import os
 import sys
 import tempfile
+import types
 import unittest
+import unittest.mock
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -362,6 +364,27 @@ class PercentTest(unittest.TestCase):
     def test_values_that_round_below_100_are_unchanged(self):
         self.assertEqual(segmentation.percent(0.99994), '99.99')
         self.assertEqual(segmentation.percent(0.9996), '99.96')
+
+
+class AgreementTablesTest(unittest.TestCase):
+    def test_rows_are_sorted_by_f1_and_ties_keep_their_order(self):
+        tokens = {'ref': 'ab\ncd\n\n', 'low': 'a\nb\nc\nd\n\n', 'tie-1': 'ab\nc\nd\n\n',
+                  'tie-2': 'ab\nc\nd\n\n', 'same': 'ab\ncd\n\n'}
+        others = ['low', 'tie-1', 'tie-2', 'same']
+        with tempfile.TemporaryDirectory() as d:
+            corpus = write(d, 'corpus.txt', 'abcd\n')
+            os.mkdir(os.path.join(d, 'corpus'))
+            for name, text in tokens.items():
+                write(d, os.path.join('corpus', f'{name}.txt'), text)
+            stats = types.SimpleNamespace(RE_DICT=[(name, None, corpus) for name in tokens])
+            groups = [('Group', 'ref', others)]
+            display = {name: (name, 'dictionary') for name in tokens}
+            with unittest.mock.patch.object(segmentation, 'AGREEMENT_GROUPS', groups), \
+                    unittest.mock.patch.object(segmentation, 'DISPLAY', display):
+                table = segmentation.agreement_tables(stats, d)
+        rows = [line.split(' | ') for line in table if line.startswith('| ')][2:]
+        self.assertEqual([row[0] for row in rows], ['| same', '| tie-1', '| tie-2', '| low'])
+        self.assertEqual([row[2] for row in rows], ['100.00', '40.00', '40.00', '0.00'])
 
 
 class SeriesTest(unittest.TestCase):

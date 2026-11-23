@@ -527,7 +527,8 @@ def percent(value: float) -> str:
 
 
 def agreement_tables(stats, segmentation_dir: str) -> list[str]:
-    """The agreement tables, one per group, on the speed corpora."""
+    """The agreement tables, one per group, on the speed corpora, sorted by
+    the agreement F1."""
     corpus = {name: corpus for name, _, corpus in stats.RE_DICT}
     out = []
     for title, reference, others in AGREEMENT_GROUPS:
@@ -540,11 +541,15 @@ def agreement_tables(stats, segmentation_dir: str) -> list[str]:
         out.append('')
         out.append('| Tokenizer | Dictionary / Model | Agreement F1 [%] | Lines that differ |')
         out.append('| --- | --- | ---: | ---: |')
+        rows = []
         for name in others:
             blocks = blocks_for(lines, os.path.join(segmentation_dir, 'corpus', name + '.txt'))
             counts = score_against(lines, blocks, ref_spans, no_ranges, merge=False)
             if counts.failures:
                 print(f'{name}: {counts.failures} lines not aligned', file=sys.stderr)
+            rows.append((name, counts))
+        rows.sort(key=lambda row: -row[1].f1())
+        for name, counts in rows:
             tokenizer, dictionary = DISPLAY[name]
             out.append(f'| {tokenizer} | {dictionary} | {percent(counts.f1())} | '
                        f'{counts.differing_lines:,} of {counts.lines:,} |')
