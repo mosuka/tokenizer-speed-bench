@@ -105,7 +105,9 @@ lindera's Japanese dictionaries come from different sources. `unidic` is
 UniDic 2.1.2. `unidic-cwj` and `unidic-csj` are UniDic 202512 for written
 (CWJ) and spoken (CSJ) Japanese, built from NINJAL's full packages;
 `unidic-cwj` is the same release as the `mecab` row `unidic-cwj-202512`, and
-the two segment the corpus identically except on 4 of its 2,346 lines. The
+the two segment the corpus identically except on 4 of its 2,346 lines; on 2
+of them they split only a run of hyphens differently, which the agreement
+table leaves out with the other punctuation, so that it counts 2 lines. The
 corpus is written Japanese, which `unidic-csj` is not made for. `sudachidict`
 is SudachiDict 20260723 with its small, core and notcore lexicons (the full
 edition), so its version and vocabulary differ from those of the `sudachi` and
@@ -275,7 +277,9 @@ over the tokens of the reference or the gold data. Before scoring, tokens
 whose first character is whitespace, punctuation, a symbol or a control
 character are dropped from both sides, as Lucene's kuromoji and nori discard
 punctuation, so that the rows that discard punctuation can be compared with
-the rows that keep it.
+the rows that keep it. Percentages have two decimals, and only an exact match
+is shown as 100.00: a share below 100 % that would round up to it is shown as
+99.99.
 
 ### How to read the metrics
 
@@ -363,7 +367,7 @@ reads the 20261015 core dictionary in mode C.
 | Tokenizer | Dictionary / Model | Agreement F1 [%] | Lines that differ |
 | --- | --- | ---: | ---: |
 | lindera | ipadic | 99.96 | 30 of 2,346 |
-| vibrato | ipadic-mecab-2.7.0 | 100.00 | 1 of 2,346 |
+| vibrato | ipadic-mecab-2.7.0 | 99.99 | 1 of 2,346 |
 | kuromoji (Atilika) | ipadic (bundled) | 99.34 | 426 of 2,346 |
 | kuromoji (Lucene) | ipadic (bundled) | 99.41 | 398 of 2,346 |
 | alyze (kuromoji) | ipadic (embedded) | 99.41 | 398 of 2,346 |
@@ -379,7 +383,7 @@ reads the 20261015 core dictionary in mode C.
 
 | Tokenizer | Dictionary / Model | Agreement F1 [%] | Lines that differ |
 | --- | --- | ---: | ---: |
-| lindera | unidic-cwj | 100.00 | 2 of 2,346 |
+| lindera | unidic-cwj | 99.99 | 2 of 2,346 |
 
 #### mecab-ko-dic 2.1.1 (reference: mecab-ko, mecab-ko-dic 2.1.1-20180720)
 
@@ -487,10 +491,10 @@ layer.
   concatenate back to it (의해 = 의하+어) is left out of the morpheme scores on
   both sides, which leaves 23,517 of the 28,366 words (82.9 %) scored; a cut
   inside such a word is not counted. The mecab-ko-dic rows cut at morpheme
-  boundaries in 97.6 % of their cuts and litsea in all of its cuts, and every
-  row keeps every eojeol boundary. The sentences are not those of the PUD
-  treebanks. UD_Korean-PUD is not used: it
-  splits the copula and some endings and compound nouns off eojeols
+  boundaries in 97.6 % of their cuts and litsea in all but 1 or 2 of its
+  48,000 cuts, and every row keeps every eojeol boundary. The sentences are
+  not those of the PUD treebanks. UD_Korean-PUD is not used: it splits the
+  copula and some endings and compound nouns off eojeols
   (수준이지만 = 수준 + 이지만), so only 69.4 % of its words that are not
   punctuation are eojeols, and the others are not morphemes either.
 * Chinese: UD_Chinese-PUD is in traditional script and was annotated by
@@ -541,8 +545,8 @@ layer.
 | mecab-ko | mecab-ko-dic 2.1.1-20180720 | 92.79 | 97.61 | 18.24 | 100.00 |
 | lindera | ko-dic | 92.79 | 97.61 | 18.24 | 100.00 |
 | mecab | mecab-ko-dic 2.1.1-20180720 | 92.71 | 97.58 | 18.24 | 100.00 |
-| litsea (korean) | korean.model | 18.15 | 100.00 | 99.99 | 100.00 |
-| litsea (korean, two-stage) | korean_pos.model | 18.15 | 100.00 | 99.99 | 100.00 |
+| litsea (korean) | korean.model | 18.15 | 99.99 | 99.99 | 100.00 |
+| litsea (korean, two-stage) | korean_pos.model | 18.15 | 99.99 | 99.99 | 100.00 |
 
 #### Chinese, UD_Chinese-PUD r2.19 (traditional)
 

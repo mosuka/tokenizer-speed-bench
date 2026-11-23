@@ -512,7 +512,12 @@ def layer_boundaries(line: str, spans: list[tuple[int, int]], merge: bool) -> li
 
 
 def percent(value: float) -> str:
-    return f'{100 * value:.2f}'
+    """A share as a percentage with two decimals. Only a share of exactly 1
+    is shown as 100.00: a share below it that rounds up to 100.00 (one token
+    in 200,000 that differs) is shown as 99.99, so that 100.00 always means
+    that the two sides are the same."""
+    text = f'{100 * value:.2f}'
+    return '99.99' if text == '100.00' and value < 1 else text
 
 
 def agreement_tables(stats, segmentation_dir: str) -> list[str]:
