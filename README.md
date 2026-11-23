@@ -99,8 +99,8 @@ three ways:
 | [rust-tinysegmenter](https://github.com/woxtu/rust-tinysegmenter) | Rust | Classifier | A Rust implementation of TinySegmenter, whose model is learned by boosting and splits as MeCab with IPADIC does | Japanese |
 | [litsea](https://github.com/mosuka/litsea) | Rust | Classifier | AdaBoost, inspired by TinySegmenter; the two-stage models learn the boundaries and the parts of speech with an averaged perceptron | Japanese, Korean, Chinese, English |
 
-The notes under [Results](#results) give the conditions under which some rows
-are measured: versions, settings and dictionaries.
+The notes under [Results](#results) give the conditions under which some
+tokenizers are measured: versions, settings and dictionaries.
 
 ## Results
 
@@ -125,13 +125,13 @@ iterations.
 
 `litsea (*, two-stage)` performs segmentation and POS tagging together from
 a single model file, via `Segmenter::with_two_stage_learner`; the other litsea
-rows only segment. `lindera` loads its dictionaries from the pre-built archives
-lindera publishes per release (e.g. `lindera-ipadic-7.0.0.zip`) rather than the
-`embed-*` cargo features, so its rows also cover the `cc-cedict` (Chinese),
+models only segment. `lindera` loads its dictionaries from the pre-built
+archives lindera publishes per release (e.g. `lindera-ipadic-7.0.0.zip`) rather
+than the `embed-*` cargo features, so it also covers the `cc-cedict` (Chinese),
 `jieba` (Chinese), and `ko-dic` (Korean) dictionaries in addition to `ipadic`,
 `unidic`, `unidic-cwj`, `unidic-csj` and `sudachidict`. Since lindera 6.1.0,
-ko-dic applies mecab-ko's left-space penalty by default, and the `ko-dic` row
-uses that default. lindera 7.0.0 segments closer to MeCab than 6.2.0 did: it
+ko-dic applies mecab-ko's left-space penalty by default, and it is measured
+with that default. lindera 7.0.0 segments closer to MeCab than 6.2.0 did: it
 skips whitespace in the lattice, carries the context across `、` and `。`
 within a line, creates unknown words as MeCab does, and breaks unknown words
 at `・`. Its CC-CEDICT and Jieba dictionaries are also built from updated
@@ -141,14 +141,14 @@ sources. On these corpora, the token counts change from 6.2.0 by +441
 lindera's Japanese dictionaries come from different sources. `unidic` is
 UniDic 2.1.2. `unidic-cwj` and `unidic-csj` are UniDic 202512 for written
 (CWJ) and spoken (CSJ) Japanese, built from NINJAL's full packages;
-`unidic-cwj` is the same release as the `mecab` row `unidic-cwj-202512`, and
+`unidic-cwj` is the same release as `mecab`'s `unidic-cwj-202512`, and
 the two segment the corpus identically except on 4 of its 2,346 lines; on 2
 of them they split only a run of hyphens differently, which the agreement
 table leaves out with the other punctuation, so that it counts 2 lines. The
 corpus is written Japanese, which `unidic-csj` is not made for. `sudachidict`
 is SudachiDict 20260723 with its small, core and notcore lexicons (the full
-edition), so its version and vocabulary differ from those of the `sudachi` and
-`sudachi.rs` rows. lindera reads Sudachi's character definitions but does not
+edition), so its version and vocabulary differ from those that `sudachi` and
+`sudachi.rs` read. lindera reads Sudachi's character definitions but does not
 run Sudachi's plugins, such as input normalization, the joining of katakana
 and numerals, or the A/B/C split modes.
 
@@ -163,8 +163,8 @@ release archive and checks its SHA-256, and `compile_all.sh` builds it and
 compiles the dictionary once with mecab-ko's `mecab-dict-index`; the original
 MeCab's `mecab-dict-index` writes the same files.
 
-`mecab` has two UniDic rows: `unidic-cwj-3.1.1`, the same dictionary as the
-`vibrato` UniDic rows (every pre-built UniDic cwj dictionary vibrato
+`mecab` is measured with two UniDic releases: `unidic-cwj-3.1.1`, the same
+dictionary as `vibrato`'s UniDic (every pre-built UniDic cwj dictionary vibrato
 distributes is 3.1.1), and `unidic-cwj-202512`, the latest UniDic release. `sudachi`
 and `sudachi.rs` read the same SudachiDict v20261015 core dictionary in the V1
 binary format, the only format Sudachi 0.8.2 and sudachi.rs 0.7.0 read;
@@ -182,14 +182,14 @@ is no longer served at its original URL, so `download_resources.sh` fetches
 the Wayback Machine's copy and checks its SHA-256.
 
 `alyze` is turbopuffer's text analysis library. Its kuromoji, nori and smartcn
-analyzers are ports of the Lucene analyzers Elasticsearch uses, and the alyze
-rows call their tokenizers (`tokenize`), not the Elasticsearch filter chain
+analyzers are ports of the Lucene analyzers Elasticsearch uses, and the bench
+calls their tokenizers (`tokenize`), not the Elasticsearch filter chain
 (`analyze`). kuromoji runs in `Mode::Normal` and nori with
-`DecompoundMode::None`, so that, like the `lindera`, `mecab` and `vibrato`
-rows, they do not decompound (alyze's defaults are `Mode::Search` and
+`DecompoundMode::None`, so that, like `lindera`, `mecab` and `vibrato`,
+they do not decompound (alyze's defaults are `Mode::Search` and
 `DecompoundMode::Discard`). Both keep the default
 `discard_punctuation: true`; smartcn always emits punctuation tokens. The
-alyze rows reuse their token buffer across lines, as alyze intends, while
+alyze bench reuses its token buffer across lines, as alyze intends, while
 lindera's `Segmenter::segment` allocates per call; on the other hand, alyze's
 kuromoji and nori fill in the part of speech, reading and so on of every token,
 while lindera reads token details lazily. `alyze (UAX #29)` is alyze's
@@ -206,8 +206,8 @@ Korean tokenizers of Apache Lucene 10.6.0 (`lucene-analysis-kuromoji` and
 `lucene-analysis-nori`), whose jars bundle mecab-ipadic-2.7.0-20070801 and
 mecab-ko-dic-2.1.1-20180720. They run with `JapaneseTokenizer.Mode.NORMAL`
 and `KoreanTokenizer.DecompoundMode.NONE` instead of Lucene's defaults
-(`SEARCH` and `DISCARD`), and discard punctuation: the options of the alyze
-rows, with which Lucene and alyze segment both corpora identically. Each
+(`SEARCH` and `DISCARD`), and discard punctuation: the same options as
+alyze, with which Lucene and alyze segment both corpora identically. Each
 bench reuses one tokenizer for every line, as Lucene intends.
 
 Dictionary / Model Size is the on-disk size of the dictionary/model file(s)
@@ -221,7 +221,7 @@ source, evaluation sets, license files, and the compile/training-only
 besides the compiled `sys.dic`/`matrix.bin`/`char.bin`/`unk.dic` the tagger
 itself opens; the dictionaries in jars are measured from their extracted
 entries rather than the compressed `.jar`, the `.bin` files for
-`kuromoji (Atilika)` and the `.dat` files for the Lucene rows; vibrato's
+`kuromoji (Atilika)` and the `.dat` files for Lucene; vibrato's
 `system.dic.zst` is
 measured decompressed, matching what it actually holds in memory). For the
 tokenizers that embed their dictionary in the executable, it is the size of
@@ -237,14 +237,14 @@ launches directly with `java -cp` rather than through `mvn exec:java` so that
 Maven's own footprint is not counted against them.
 
 Peak Memory is the physical memory the process occupied, not the memory it
-allocated, so it does not mean the same thing for every row. RSS counts the
-pages of mapped files that the process touched: the tokenizers that read their
-dictionary with `mmap` (lindera, for example) or embed it in the executable
-(alyze and vaporetto) include the dictionary pages they read, which are page
-cache that other processes can share and that the kernel can reclaim under
-memory pressure. The Java rows include the JVM's own memory and a
-garbage-collected heap whose size depends on the collector's settings and
-behavior. Compare this column across rows with these differences in mind.
+allocated, so it does not mean the same thing for every tokenizer. RSS counts
+the pages of mapped files that the process touched: the tokenizers that read
+their dictionary with `mmap` (lindera, for example) or embed it in the
+executable (alyze and vaporetto) include the dictionary pages they read, which
+are page cache that other processes can share and that the kernel can reclaim
+under memory pressure. The tokenizers in Java include the JVM's own memory and
+a garbage-collected heap whose size depends on the collector's settings and
+behavior. Compare this column across tokenizers with these differences in mind.
 
 ### Japanese (`wagahaiwa_nekodearu.txt`, 372,573 characters)
 
@@ -314,18 +314,22 @@ as described above.
 
 ## Segmentation accuracy
 
-Measured 2026-11-24 on the machine above with `./segment_all.sh`. Every row
-segments with the same executable and options as in the speed tables: run
-with `BENCH_TOKENS=<file>`, each bench segments its input a second time after
-the timed loop and writes the tokens, and `segmentation.py` scores them.
+Measured 2026-11-24 on the machine above with `./segment_all.sh`. Every
+tokenizer segments with the same executable and options as in the speed tables:
+run with `BENCH_TOKENS=<file>`, each bench segments its input a second time
+after the timed loop and writes the tokens, and `segmentation.py` scores them.
+
+In this section, "tokenizer" means one row of the tables, that is, the
+combination of a tokenizer, its dictionary or model, and settings such as the
+split mode.
 
 A token counts as correct when it covers exactly the same characters as a
-token of the other side. Precision is over the tokens of the row, and recall
-over the tokens of the reference or the gold data. Before scoring, tokens
-whose first character is whitespace, punctuation, a symbol or a control
+token of the other side. Precision is over the tokens of the tokenizer, and
+recall over the tokens of the reference or the gold data. Before scoring,
+tokens whose first character is whitespace, punctuation, a symbol or a control
 character are dropped from both sides, as Lucene's kuromoji and nori discard
-punctuation, so that the rows that discard punctuation can be compared with
-the rows that keep it. Percentages have two decimals, and only an exact match
+punctuation, so that the tokenizers that discard punctuation can be compared
+with those that keep it. Percentages have two decimals, and only an exact match
 is shown as 100.00: a share below 100 % that would round up to it is shown as
 99.99.
 
@@ -351,10 +355,10 @@ into longer units (IPADIC, Sudachi in mode C) both split somewhere in this
 range. The Korean tables read the same way, with morphemes as the small units
 and eojeols (the space-separated words) as the large ones.
 
-**F1 of a unit.** How closely a row follows the units of one size. Precision
-is the share of the row's tokens that are exactly such units (how accurate
-its output is), and recall the share of these units that the row outputs (how
-little it misses); F1 combines the two and is high only when both are. A row
+**F1 of a unit.** How closely a tokenizer follows the units of one size.
+Precision is the share of its tokens that are exactly such units (how accurate
+its output is), and recall the share of these units that it outputs (how little
+it misses); F1 combines the two and is high only when both are. A tokenizer
 that splits 国際連合 / で / 猫 / を / 見 / た scores 76.9 % on short units, as
 国際連合 is not a short unit (国際 and 連合 are), and 100 % on long units. The
 F1 thus depends on which standard a dictionary follows, and a low F1 is not
@@ -369,30 +373,30 @@ the places between two characters are of three kinds:
 | May cut | at a short-unit boundary inside a long unit | 国際 / 連合 |
 | Must not cut | inside a short unit | 国 / 際, 連 / 合 |
 
-Dictionaries differ at the places where a row may cut (国際連合 as one word or
-as two), so cutting or not cutting there lowers no boundary metric. Each
-metric goes through places one by one:
+Dictionaries differ at the places where a tokenizer may cut (国際連合 as one
+word or as two), so cutting or not cutting there lowers no boundary metric.
+Each metric goes through places one by one:
 
-| Metric | Of these places | The share | Drops when the row |
+| Metric | Of these places | The share | Drops when the tokenizer |
 | --- | --- | --- | --- |
-| Boundary precision (short units) | where the row cuts | that are places where it must or may cut | cuts inside a short unit |
+| Boundary precision (short units) | where the tokenizer cuts | that are places where it must or may cut | cuts inside a short unit |
 | Boundary recall (long units) | where it must cut | where it cuts | joins two long units |
 | Boundary recall (bunsetsu) | the bunsetsu boundaries, which are among them | where it cuts | joins two bunsetsu |
 
-A row that splits 国際 / 連 / 合 / で / 猫 / を / 見 / た / 。 cuts at 8 places and 7
-of them are right, so its boundary precision is 87.5 %:
+A tokenizer that splits 国際 / 連 / 合 / で / 猫 / を / 見 / た / 。 cuts at 8
+places and 7 of them are right, so its boundary precision is 87.5 %:
 
-| Where the row cuts | 国際 / 連 | 連 / 合 | 合 / で | で / 猫 | 猫 / を | を / 見 | 見 / た | た / 。 |
+| Where the tokenizer cuts | 国際 / 連 | 連 / 合 | 合 / で | で / 猫 | 猫 / を | を / 見 | 見 / た | た / 。 |
 | --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | Must or may it cut there? | yes | **no** | yes | yes | yes | yes | yes | yes |
 
-A row that splits 国際連合で猫 / を / 見た / 。 cuts at 3 of the 6 places where it
-must, so its boundary recall is 50 % for long units. Two of the 6 are bunsetsu
-boundaries, and it cuts at 1 of them, so it is 50 % for bunsetsu too:
+A tokenizer that splits 国際連合で猫 / を / 見た / 。 cuts at 3 of the 6 places
+where it must, so its boundary recall is 50 % for long units. Two of the 6 are
+bunsetsu boundaries, and it cuts at 1 of them, so it is 50 % for bunsetsu too:
 
 | Where it must cut | 国際連合 / で | で / 猫 (bunsetsu) | 猫 / を | を / 見 (bunsetsu) | 見 / た | た / 。 |
 | --- | :---: | :---: | :---: | :---: | :---: | :---: |
-| Does the row cut there? | **no** | **no** | yes | yes | **no** | yes |
+| Does the tokenizer cut there? | **no** | **no** | yes | yes | **no** | yes |
 
 Four ways to split the sentence, scored by `segmentation.py` (%):
 
@@ -412,11 +416,11 @@ Four ways to split the sentence, scored by `segmentation.py` (%):
   misses half of the places where it must cut.
 
 When the boundary precision (short units) and the boundary recall (long
-units) are both close to 100 %, the row splits correctly somewhere between
-short and long units, whatever the standard of its dictionary: these two
-compare dictionaries fairly. The two F1 show which standard a row is close to.
-In Korean, the eojeol boundaries are the places where a row must cut, and the
-morpheme boundaries inside an eojeol those where it may.
+units) are both close to 100 %, the tokenizer splits correctly somewhere
+between short and long units, whatever the standard of its dictionary: these
+two compare dictionaries fairly. The two F1 show which standard a tokenizer is
+close to. In Korean, the eojeol boundaries are the places where a tokenizer
+must cut, and the morpheme boundaries inside an eojeol those where it may.
 
 "Must" and "must not" are by UD's standard. A dictionary can list as one word
 what UD splits: IPADIC lists その他 and 役に立つ, and `lindera`'s `sudachidict`
@@ -431,7 +435,7 @@ an implementation reproduces the reference, not whether the split is right.
 
 ### Agreement with the reference implementation
 
-The rows that read the same dictionary or model are compared with a
+The tokenizers that read the same dictionary or model are compared with a
 reference implementation of it, on the corpora of the speed tables. Agreement
 shows how closely an implementation reproduces the reference, not whether its
 segmentation is right. `kuromoji (Lucene)` and `alyze (kuromoji)` write the
@@ -519,34 +523,35 @@ Chinese-GSD and GSDSimp).
 UD's units are syntactic words, and UD leaves the details of word
 segmentation to the documentation of each language (see UD's
 [tokenization guidelines](https://universaldependencies.org/u/overview/tokenization.html)).
-Every row is scored against the layers that the UD data of its language
-annotates, so that rows that segment by different standards are read against
-the same data. The layers of Japanese (short units, long units, bunsetsu)
-and Korean (morphemes, eojeols) run from fine to coarse, each unit of a
-layer being made of whole units of the finer ones. They are scored by their
+Every tokenizer is scored against the layers that the UD data of its language
+annotates, so that tokenizers that segment by different standards are read
+against the same data. The layers of Japanese (short units, long units,
+bunsetsu) and Korean (morphemes, eojeols) run from fine to coarse, each unit of
+a layer being made of whole units of the finer ones. They are scored by their
 units and by their boundaries:
 
-* F1 of the units: how closely the row follows the standard of the layer. A
-  row that follows another standard scores low on it; the notes say which
-  rows follow which standard.
-* Boundary precision of the finest layer: the share of the row's cuts (the
-  edges of its tokens inside the sentence) that are boundaries of the layer.
-  It is low when the row splits inside the units.
-* Boundary recall of a coarser layer: the share of the layer's boundaries
-  that no token of the row crosses. It is low when the row joins units across
-  them. It looks at the tokens that cross a boundary, not at the edges of
-  tokens, so a row that drops punctuation loses no boundary next to it.
+* F1 of the units: how closely the tokenizer follows the standard of the layer.
+  A tokenizer that follows another standard scores low on it; the notes say
+  which tokenizers follow which standard.
+* Boundary precision of the finest layer: the share of the tokenizer's cuts
+  (the edges of its tokens inside the sentence) that are boundaries of the
+  layer. It is low when the tokenizer splits inside the units.
+* Boundary recall of a coarser layer: the share of the layer's boundaries that
+  no token of the tokenizer crosses. It is low when the tokenizer joins units
+  across them. It looks at the tokens that cross a boundary, not at the edges
+  of tokens, so a tokenizer that drops punctuation loses no boundary next to
+  it.
 
 Usually, boundary precision and recall are both taken against the same
 segmentation; precision against the finest layer with recall against a
-coarser one is a combination made for this comparison. A row whose cuts are
-all short-unit boundaries and that cuts at every long-unit boundary segments
-somewhere between short and long units, whatever its standard. The boundary
-precision of the coarser layers is not given, nor the F1 of bunsetsu: every
-row splits finer than these layers, so these numbers would show how finely a
-row splits, not its errors. Chinese, with one layer, and English, with words
-and tokens, are given precision, recall and F1 of UD's words. The rows are
-sorted by the F1 of the first layer.
+coarser one is a combination made for this comparison. A tokenizer whose cuts
+are all short-unit boundaries and that cuts at every long-unit boundary
+segments somewhere between short and long units, whatever its standard. The
+boundary precision of the coarser layers is not given, nor the F1 of bunsetsu:
+every tokenizer splits finer than these layers, so these numbers would show how
+finely a tokenizer splits, not its errors. Chinese, with one layer, and
+English, with words and tokens, are given precision, recall and F1 of UD's
+words. The tables are sorted by the F1 of the first layer.
 
 * Japanese: UD Japanese is tokenized in three layers, as the Balanced Corpus
   of Contemporary Written Japanese (BCCWJ) is: short units, long units and
@@ -555,29 +560,31 @@ sorted by the F1 of the first layer.
   says.
   * UD's words are short units with cardinal numbers concatenated into one
     word, so adjacent tokens made only of digits are merged on both sides
-    first. The UniDic rows, litsea and Sudachi's mode A follow short units
-    (mode A scores 98.5 to 98.7 %). `kytea` and `vaporetto` (the same KyTea
-    model) also split conjugated words into stem and ending. The IPADIC rows
-    and `rust-tinysegmenter` use IPADIC's units, Sudachi's modes B and C longer
-    units (C the one for named entities) and `lindera`'s `sudachidict` the
-    SudachiDict lexicon without Sudachi's split modes.
+    first. Sudachi's mode A, litsea and the tokenizers that read UniDic follow
+    short units (mode A scores 98.5 to 98.7 %). `kytea` and `vaporetto` (the
+    same KyTea model) also split conjugated words into stem and ending.
+    `rust-tinysegmenter` and the tokenizers that read IPADIC use IPADIC's
+    units, Sudachi's modes B and C longer units (C the one for named entities)
+    and `lindera`'s `sudachidict` the SudachiDict lexicon without Sudachi's
+    split modes.
   * The long units are built from the MISC field `LUWBILabel` of each word;
     they equal the words of
     [UD_Japanese-PUDLUW](https://github.com/UniversalDependencies/UD_Japanese-PUDLUW),
-    the long-unit version of the same sentences. No row follows long units.
+    the long-unit version of the same sentences. No tokenizer follows long
+    units.
   * Every bunsetsu boundary (MISC `BunsetuBILabel`) is also a boundary of
     long and short units. Ignored tokens cross no boundary, and the cuts are
     those of the tokens that are scored.
-  * Every row but `kytea`, `vaporetto` and `rust-tinysegmenter` has a boundary
-    precision of at least 98.7 %, and every row a boundary recall of at least
-    98.8 % for long units and 98.7 % for the 8,972 bunsetsu boundaries. The
-    IPADIC rows and Sudachi's modes B and C score lower on short units
-    because their units are longer, not because they cut at wrong places.
-    `kytea` and `vaporetto` split inside short units (い / る), and
-    `rust-tinysegmenter` loses on both sides. The tokens that cross a
-    bunsetsu boundary are mostly multiword entries of IPADIC (役に立つ, として)
-    and named entities and idioms of `lindera`'s `sudachidict` (法の支配,
-    トロイの木馬), which join words of two bunsetsu.
+  * Every tokenizer but `kytea`, `vaporetto` and `rust-tinysegmenter` has a
+    boundary precision of at least 98.7 %, and every tokenizer a boundary
+    recall of at least 98.8 % for long units and 98.7 % for the 8,972 bunsetsu
+    boundaries. Sudachi's modes B and C and the tokenizers that read IPADIC
+    score lower on short units because their units are longer, not because
+    they cut at wrong places. `kytea` and `vaporetto` split inside short units
+    (い / る), and `rust-tinysegmenter` loses on both sides. The tokens that
+    cross a bunsetsu boundary are mostly multiword entries of IPADIC (役に立つ,
+    として) and named entities and idioms of `lindera`'s `sudachidict`
+    (法の支配, トロイの木馬), which join words of two bunsetsu.
   * `lindera`'s `ipadic` scores higher than `mecab`'s, as lindera 7.0.0
     breaks unknown words at `・` and the gold data splits katakana names
     there (コリ・シューマン), while MeCab keeps such a name as one unknown
@@ -585,15 +592,15 @@ sorted by the F1 of the first layer.
     the 106 places where `lindera` and `vibrato` segment differently are such
     names.
 * Korean: the words of UD_Korean-Kaist are eojeols (the space-separated
-  words) with the punctuation split off, which litsea outputs; the other rows
-  output morphemes. The morphemes are the parts of each word's lemma split at
-  `+` (조약에 = 조약+에). They are base forms, so a word whose parts do not
-  concatenate back to it (의해 = 의하+어) is left out of the morpheme scores on
-  both sides, which leaves 23,517 of the 28,366 words (82.9 %) scored; a cut
-  inside such a word is not counted. The mecab-ko-dic rows have a boundary
-  precision of 97.6 %, litsea cuts elsewhere than at a morpheme boundary in
-  only 1 or 2 of its 48,000 cuts, and every row has a boundary recall of
-  100 % for eojeols. The sentences are not those of the PUD treebanks.
+  words) with the punctuation split off, which litsea outputs; the other
+  tokenizers output morphemes. The morphemes are the parts of each word's lemma
+  split at `+` (조약에 = 조약+에). They are base forms, so a word whose parts do
+  not concatenate back to it (의해 = 의하+어) is left out of the morpheme scores
+  on both sides, which leaves 23,517 of the 28,366 words (82.9 %) scored; a cut
+  inside such a word is not counted. The tokenizers that read mecab-ko-dic have
+  a boundary precision of 97.6 %, litsea cuts elsewhere than at a morpheme
+  boundary in only 1 or 2 of its 48,000 cuts, and every tokenizer has a boundary
+  recall of 100 % for eojeols. The sentences are not those of the PUD treebanks.
   UD_Korean-PUD is not used: it splits the copula and some endings and
   compound nouns off eojeols
   (수준이지만 = 수준 + 이지만), so only 69.4 % of its words that are not
