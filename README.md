@@ -277,6 +277,72 @@ character are dropped from both sides, as Lucene's kuromoji and nori discard
 punctuation, so that the rows that discard punctuation can be compared with
 the rows that keep it.
 
+### How to read the metrics
+
+This section explains the metrics with one sentence, for readers who are
+new to them; the sections below define them precisely.
+
+**The units of the gold data.** Dictionaries split Japanese into words in
+different ways, and none of them is the one right way. The Japanese gold data
+splits each sentence into units of three sizes, each unit being made of whole
+units of the smaller sizes. For 国際連合で猫を見た。 ("I saw a cat at the
+United Nations"):
+
+| Unit | Split | What it is |
+| --- | --- | --- |
+| Short units | 国際 / 連合 / で / 猫 / を / 見 / た / 。 | the smallest units |
+| Long units | 国際連合 / で / 猫 / を / 見 / た / 。 | compounds joined into one unit |
+| Bunsetsu | 国際連合で / 猫を / 見た。 | phrases: a content word with the particles after it |
+
+Dictionaries that split into short units (UniDic) and dictionaries that split
+into longer units (IPADIC, Sudachi) both split somewhere in this range. The
+Korean tables read the same way, with morphemes as the small units and
+eojeols (the space-separated words) as the large ones.
+
+**F1 of a unit.** How closely a row follows the units of one size. Precision
+is the share of the row's tokens that are exactly such units (how accurate
+its output is), and recall the share of these units that the row outputs (how
+little it misses); F1 combines the two and is high only when both are. A row
+that splits 国際連合 / で / 猫 / を / 見 / た scores 76.9 % on short units, as
+国際連合 is not a short unit (国際 and 連合 are), and 100 % on long units. The
+F1 thus depends on which standard a dictionary follows, and a low F1 is not
+always an error.
+
+**Boundaries.** A boundary is a place between two words.
+
+| Metric | The share of | Drops when the row |
+| --- | --- | --- |
+| Cuts at short-unit boundaries | the row's cuts that are also short-unit boundaries | cuts inside a word |
+| Long-unit boundaries kept | the long-unit boundaries that no token of the row crosses | joins words across a long-unit boundary |
+| Bunsetsu boundaries kept | the bunsetsu boundaries that no token of the row crosses | joins words across a bunsetsu boundary, an error in most standards |
+
+Four ways to split the sentence above, scored by `segmentation.py` (%):
+
+| Split | F1, short units | Cuts at short-unit boundaries | F1, long units | Long-unit boundaries kept | Bunsetsu boundaries kept |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| A: 国際 / 連合 / で / 猫 / を / 見 / た / 。 | 100.0 | 100.0 | 76.9 | 100.0 | 100.0 |
+| B: 国際連合 / で / 猫 / を / 見 / た / 。 | 76.9 | 100.0 | 100.0 | 100.0 | 100.0 |
+| C: 国際 / 連 / 合 / で / 猫 / を / 見 / た / 。 | 80.0 | 87.5 | 71.4 | 100.0 | 100.0 |
+| D: 国際連合で猫 / を / 見た / 。 | 20.0 | 100.0 | 22.2 | 50.0 | 50.0 |
+
+* A follows short units and B long units: their F1 differ with the
+  standard, but both keep every boundary, so both split correctly.
+* C cuts inside 連合, so fewer of its cuts are at short-unit boundaries. In
+  the tables below, `kytea` scores 91 % there, as it cuts い / る.
+* D cuts only at the right places, so all its cuts are at short-unit
+  boundaries, but it joins words across long-unit and bunsetsu boundaries.
+
+When both "Cuts at short-unit boundaries" and "Long-unit boundaries kept" are
+close to 100 %, the row splits correctly somewhere between short and long
+units, whatever the standard of its dictionary: these two compare
+dictionaries fairly. The two F1 show which standard a row is close to.
+
+**Agreement F1.** The F1 against the output of the reference implementation
+of the same dictionary (MeCab, for example) instead of the gold data: 100 %
+means that the two split the same way. "Lines that differ" counts the lines
+of the speed corpus where any split differs. Agreement shows how faithfully
+an implementation reproduces the reference, not whether the split is right.
+
 ### Agreement with the reference implementation
 
 The rows that read the same dictionary or model are compared with a
