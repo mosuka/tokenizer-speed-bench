@@ -177,9 +177,19 @@ archive without licenses and notices). 1 MB is 1,048,576 bytes. Peak Memory is
 the maximum resident set size (RSS) of the whole benchmark process, measured
 with GNU time (`/usr/bin/time -v`) around each iteration; it therefore includes
 dictionary loading, not just the segmentation loop that Speed measures. Every
-engine is measured this way, including the two Java ones, which `run_all.sh`
+engine is measured this way, including the four Java ones, which `run_all.sh`
 launches directly with `java -cp` rather than through `mvn exec:java` so that
 Maven's own footprint is not counted against them.
+
+Peak Memory is the physical memory the process occupied, not the memory it
+allocated, so it does not mean the same thing for every row. RSS counts the
+pages of mapped files that the process touched: the tokenizers that read their
+dictionary with `mmap` (lindera, for example) or embed it in the executable
+(alyze and vaporetto) include the dictionary pages they read, which are page
+cache that other processes can share and that the kernel can reclaim under
+memory pressure. The Java rows include the JVM's own memory and a
+garbage-collected heap whose size depends on the collector's settings and
+behavior. Compare this column across rows with these differences in mind.
 
 ### Japanese (`wagahaiwa_nekodearu.txt`, 372,573 characters)
 
